@@ -1,0 +1,134 @@
+version: "1.0"
+project: "PCMC Sarathi AI - Grievance Redressal Module"
+
+# 11 Target Civic Classification Classes & Department Mappings
+categories:
+  drainage:
+    department: "DRAINAGE_DEPT"
+    department_name_mr: "जलनिस्सारण व ड्रेनेज विभाग"
+    department_name_en: "Drainage & Sewerage Department"
+    sla_hours: 24
+    description: "Blocked drainage, overflowing gutter, manhole open"
+    keywords: ["drainage", "gutter", "manhole", "sewage", "सांडपाणी", "ड्रेनेज", "गटर", "गटार", "नाले", "तुंबले"]
+
+  garbage:
+    department: "HEALTH_SWM"
+    department_name_mr: "आरोग्य व घनकचरा व्यवस्थापन विभाग"
+    department_name_en: "Health & Solid Waste Management"
+    sla_hours: 24
+    description: "Garbage heap, uncollected waste, unclean public spot"
+    keywords: ["garbage", "trash", "waste", "dustbin", "cleanliness", "कचरा", "घाण", "कचराकुंडी", "उकिरडा", "स्वच्छता"]
+
+  pipeline_water_leakage:
+    department: "WATER_SUPPLY"
+    department_name_mr: "पाणीपुरवठा विभाग"
+    department_name_en: "Water Supply Department"
+    sla_hours: 24
+    description: "Water pipe burst, clean water leakage, low pressure, dirty water"
+    keywords: ["water", "pipeline", "leakage", "tap", "pipe", "पाणी", "गळती", "पाईपलाईन", "नळ", "जलपुरवठा"]
+
+  pothole:
+    department: "CIVIL_ROADS"
+    department_name_mr: "रस्ते व स्थापत्य विभाग"
+    department_name_en: "Roads & Civil Infrastructure"
+    sla_hours: 48
+    description: "Pothole on asphalt/concrete road, broken road surface"
+    keywords: ["pothole", "road", "crater", "tarmac", "asphalt", "खड्डा", "खड्डे", "रस्ता", "खड्डेमय", "डामर"]
+
+  traffic_jams:
+    department: "TRAFFIC_CELL"
+    department_name_mr: "वाहतूक नियोजन व पोलीस समन्वय कक्ष"
+    department_name_en: "Traffic Management & Police Coordination"
+    sla_hours: 4
+    description: "Severe traffic congestion, broken signal causing choke point"
+    keywords: ["traffic", "jam", "congestion", "signal", "वाहतूक", "ट्रॅफिक", "कोंडी", "सिग्नल", "जाम"]
+
+  streetlight:
+    department: "ELECTRICAL"
+    department_name_mr: "विद्युत विभाग"
+    department_name_en: "Electrical Department"
+    sla_hours: 24
+    description: "Streetlight not working, dark road, flickering street lamp"
+    keywords: ["streetlight", "lamp", "dark", "light pole", "पथदिवा", "दिवा", "लाईट", "अंधार", "स्ट्रीटलाईट"]
+
+  trees:
+    department: "GARDEN_TREE"
+    department_name_mr: "उद्यान व वृक्ष प्राधिकरण विभाग"
+    department_name_en: "Garden & Tree Authority"
+    sla_hours: 48
+    description: "Fallen tree, dangerous hanging branches, tree trimming needed"
+    keywords: ["tree", "branch", "fallen tree", "garden", "झाड", "फांदी", "झाडे", "वृक्ष", "उद्यान", "झाड पडले"]
+
+  noise_pollution:
+    department: "POLLUTION_CONTROL"
+    department_name_mr: "पर्यावरण व प्रदूषण नियंत्रण विभाग"
+    department_name_en: "Environment & Pollution Control"
+    sla_hours: 4
+    description: "Loudspeakers late at night, industrial noise, unauthorized DJ"
+    keywords: ["noise", "loudspeaker", "sound", "dj", "ध्वनी", "आवाज", "लाउडस्पीकर", "गोंगाट", "प्रदूषण"]
+
+  encroachment:
+    department: "ANTI_ENCROACHMENT"
+    department_name_mr: "अतिक्रमण निर्मूलन विभाग"
+    department_name_en: "Anti-Encroachment Department"
+    sla_hours: 72
+    description: "Illegal stalls on footpath, road blockage by unauthorized hawkers"
+    keywords: ["encroachment", "hawker", "illegal stall", "footpath", "अतिक्रमण", "फेरीवाले", "फूटपाथ", "हॉकर्स", "बेकायदेशीर"]
+
+  electricity:
+    department: "ELECTRICAL"
+    department_name_mr: "विद्युत विभाग / MSEDCL समन्वय"
+    department_name_en: "Electrical Maintenance & Power Safety"
+    sla_hours: 12
+    description: "Open electrical wires, sparking transformer, dangerous electric pole"
+    keywords: ["wire", "sparking", "transformer", "shock", "current", "विद्युत", "उघडी तार", "शॉर्ट सर्किट", "डीपी", "करंट"]
+
+  unauthorized_banner_flex:
+    department: "SKY_SIGNS_LICENSE"
+    department_name_mr: "आकाशचिन्ह व परवाना विभाग"
+    department_name_en: "Sky Signs & Advertisement Licensing"
+    sla_hours: 24
+    description: "Illegal political banners, hoardings, flex obstructing road visibility"
+    keywords: ["banner", "flex", "hoarding", "poster", "बॅनर", "फ्लेक्स", "होर्डिंग", "पोस्टर", "जाहिरात"]
+
+departments:
+  HEALTH_SWM:
+    head: "Dr. K. S. Shinde"
+    contact: "020-67333333"
+    escalation_hours: 24
+  CIVIL_ROADS:
+    head: "Er. P. M. Jadhav"
+    contact: "020-67333334"
+    escalation_hours: 48
+  WATER_SUPPLY:
+    head: "Er. S. N. Patil"
+    contact: "020-67333335"
+    escalation_hours: 24
+  DRAINAGE_DEPT:
+    head: "Er. R. V. Kadam"
+    contact: "020-67333336"
+    escalation_hours: 24
+  ELECTRICAL:
+    head: "Er. V. A. More"
+    contact: "020-67333337"
+    escalation_hours: 24
+  GARDEN_TREE:
+    head: "Shri. A. B. Gaikwad"
+    contact: "020-67333338"
+    escalation_hours: 48
+  TRAFFIC_CELL:
+    head: "Insp. S. R. Deshmukh"
+    contact: "020-67333339"
+    escalation_hours: 4
+  POLLUTION_CONTROL:
+    head: "Officer M. T. Bhosale"
+    contact: "020-67333340"
+    escalation_hours: 4
+  ANTI_ENCROACHMENT:
+    head: "Shri. Y. D. Salve"
+    contact: "020-67333341"
+    escalation_hours: 72
+  SKY_SIGNS_LICENSE:
+    head: "Shri. D. K. Pawar"
+    contact: "020-67333342"
+    escalation_hours: 24

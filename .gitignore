@@ -1,0 +1,15 @@
+uploads/temp_edge_profile/
+uploads/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+.vscode/
+.idea/
+*.log
+models/
+runs/
+*.pt
+*.onnx

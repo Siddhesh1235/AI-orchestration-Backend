@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WardMitra AI - Mobile App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary-navy: #0b3b64;
+            --primary-navy-dark: #072a48;
+            --primary-navy-light: #164e7e;
+            --accent-green: #10b981;
+            --bg-app: #f0f4f8;
+            --surface-white: #ffffff;
+            --border-light: #e2e8f0;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --danger-red: #ef4444;
+            --warning-amber: #f59e0b;
+        }
+
+        body {
+            background: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        /* Phone Frame Wrapper */
+        .phone-frame {
+            width: 100%;
+            max-width: 420px;
+            height: 94vh;
+            max-height: 890px;
+            background: var(--bg-app);
+            border-radius: 36px;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 10px #1e293b;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+                background: var(--bg-app);
+            }
+            .phone-frame {
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+
+        /* 1. Android Status Bar */
+        .status-bar {
+            background: var(--primary-navy);
+            color: #ffffff;
+            padding: 8px 18px 4px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            z-index: 20;
+        }
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-icons {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.74rem;
+        }
+
+        /* 2. Top App Bar (Dynamic per Tab) */
+        .app-header {
+            background: var(--primary-navy);
+            color: #ffffff;
+            padding: 10px 16px 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(11, 59, 100, 0.25);
+            z-index: 10;
+        }
+
+        /* Home Header Style (Screenshot 2) */
+        .header-home {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .home-user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .app-logo-badge {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            padding: 2px;
+        }
+        .app-logo-badge svg {
+            width: 24px;
+            height: 24px;
+            color: #0b3b64;
+        }
+        .app-logo-badge span {
+            font-size: 0.52rem;
+            font-weight: 800;
+            color: #0b3b64;
+            line-height: 1;
+            margin-top: 1px;
+        }
+        .greeting-text h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            line-height: 1.2;
+        }
+        .greeting-text p {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 160px;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .header-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Chat Header Style (Screenshot 1) */
+        .header-chat {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .robot-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #174d7d;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .chat-info h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+        .chat-info p {
+            font-size: 0.72rem;
+            color: #9ac2e8;
+            margin-top: 2px;
+        }
+        .online-pill {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .online-dot {
+            width: 7px;
+            height: 7px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        /* 3. Main App Body (Switches between views) */
+        .app-body {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            background: var(--bg-app);
+            scroll-behavior: smooth;
+        }
+
+        /* VIEW 1: FEED TAB (Screenshot 2) */
+        #tabFeedView {
+            display: flex;
+            flex-direction: column;
+            padding: 20px 16px;
+            gap: 16px;
+            min-height: 100%;
+        }
+        .ward-banner-card {
+            background: linear-gradient(135deg, #0b3b64, #1e40af);
+            color: white;
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 8px 20px rgba(11, 59, 100, 0.2);
+        }
+        .ward-banner-card h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .ward-banner-card p {
+            font-size: 0.8rem;
+            color: #bfdbfe;
+            line-height: 1.4;
+        }
+        .announcement-empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+        .announcement-empty-state p {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #64748b;
+            margin-top: 10px;
+        }
+        .quick-action-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: auto;
+        }
+        .action-card {
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: transform 0.15s, border-color 0.2s;
+        }
+        .action-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary-navy);
+        }
+        .action-card .act-icon {
+            font-size: 1.6rem;
+        }
+        .action-card span {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary-navy);
+        }
+
+        /* VIEW 2: AI CHAT TAB (Screenshot 1) */
+        #tabChatView {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            background: var(--bg-app);
+        }
+        .chat-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .msg-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .msg-row.bot { justify-content: flex-start; }
+        .msg-row.user { justify-content: flex-end; }
+
+        .bot-circle-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-navy);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .bubble {
+            max-width: 82%;
+            border-radius: 18px;
+            padding: 12px 14px;
+            font-size: 0.88rem;
+            line-height: 1.45;
+            position: relative;
+            word-wrap: break-word;
+        }
+        .bubble.bot {
+            background: #ffffff;
+            color: #1e293b;
+            border-top-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .bubble.user {
+            background: var(--primary-navy);
+            color: #ffffff;
+            border-top-right-radius: 4px;
+            box-shadow: 0 2px 8px rgba(11, 59, 100, 0.25);
+        }
+        .bubble-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 4px;
+        }
+        .bubble-time {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .bubble.user .bubble-time { color: #cbd5e1; }
+
+        /* Attached image in message */
+        .bubble-image {
+            width: 100%;
+            max-height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-top: 6px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        /* Grievance Result Card */
+        .card-ticket {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.82rem;
+        }
+        .card-ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            color: var(--primary-navy);
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 5px;
+        }
+        .card-ticket-row {
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+        .card-ticket-row span:first-child { color: #64748b; }
+
+        .chip-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .chip-green { background: #dcfce7; color: #166534; }
+        .chip-red { background: #fee2e2; color: #991b1b; }
+        .chip-orange { background: #fef3c7; color: #92400e; }
+
+        /* Typing dots */
+        .typing-box {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 14px;
+            background: #ffffff;
+            border-radius: 18px;
+            border-top-left-radius: 4px;
+            width: fit-content;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .dot {
+            width: 7px;
+            height: 7px;
+            background: var(--primary-navy);
+            border-radius: 50%;
+            animation: bounce 1.2s infinite ease-in-out;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Chips Carousel */
+        .chat-chips {
+            display: flex;
+            gap: 7px;
+            overflow-x: auto;
+            padding: 6px 14px 4px 14px;
+            background: var(--bg-app);
+            scrollbar-width: none;
+        }
+        .chat-chips::-webkit-scrollbar { display: none; }
+        .chip-btn {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--primary-navy);
+            white-space: nowrap;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.15s;
+        }
+        .chip-btn:hover { background: var(--primary-navy); color: white; }
+        .chip-btn.danger { border-color: #f87171; color: #dc2626; }
+        .chip-btn.danger:hover { background: #dc2626; color: white; }
+
+        /* Attachment Bar */
+        .attachment-bar {
+            display: none;
+            padding: 6px 14px;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .attachment-thumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #334155;
+            font-weight: 500;
+        }
+        .attachment-thumb img {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+        .btn-clear {
+            background: #f1f5f9;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        /* Chat Input Bar */
+        .chat-bottom-bar {
+            background: #ffffff;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #e2e8f0;
+            z-index: 10;
+        }
+        .circle-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--primary-navy);
+            color: #ffffff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.1s, background 0.15s;
+        }
+        .circle-btn:active { transform: scale(0.92); }
+
+        .input-pill {
+            flex: 1;
+            background: #f1f5f9;
+            border: 1px solid transparent;
+            border-radius: 24px;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            color: #1e293b;
+            outline: none;
+        }
+        .input-pill:focus {
+            background: #ffffff;
+            border-color: var(--primary-navy);
+        }
+
+        .btn-send-mint {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            color: #ffffff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+        }
+        .btn-send-mint:active { transform: scale(0.92); }
+
+        /* VIEW 3: RAISE COMPLAINT TAB */
+        #tabRaiseView {
+            display: none;
+            padding: 18px 16px;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .form-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid var(--border-light);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .form-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .form-input-text {
+            width: 100%;
+            padding: 10px 14px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            outline: none;
+            color: var(--text-dark);
+        }
+        .form-input-text:focus {
+            border-color: var(--primary-navy);
+            background: #ffffff;
+        }
+        .upload-dropzone {
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8fafc;
+            transition: all 0.2s;
+        }
+        .upload-dropzone:hover {
+            border-color: var(--primary-navy);
+            background: #f0f4f8;
+        }
+        .btn-submit-full {
+            width: 100%;
+            padding: 13px;
+            background: var(--primary-navy);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(11, 59, 100, 0.3);
+            margin-top: 4px;
+        }
+        .btn-submit-full:active { transform: scale(0.98); }
+
+        /* VIEW 4: COMPLAINTS / TRACK TAB */
+        #tabComplaintsView {
+            display: none;
+            padding: 18px 16px;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .track-search-bar {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* VIEW 5: PROFILES TAB */
+        #tabProfilesView {
+            display: none;
+            padding: 18px 16px;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+            border: 1px solid var(--border-light);
+        }
+        .avatar-circle-large {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--primary-navy);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        /* 4. Bottom Navigation Bar (5 Tabs matching Screenshot 2!) */
+        .bottom-nav-bar {
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 6px 0 8px 0;
+            z-index: 20;
+        }
+        .nav-tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 10px;
+            gap: 3px;
+            color: #64748b;
+            transition: color 0.15s;
+            flex: 1;
+        }
+        .nav-tab-item svg {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2;
+        }
+        .nav-tab-item span {
+            font-size: 0.68rem;
+            font-weight: 600;
+        }
+        .nav-tab-item.active {
+            color: var(--primary-navy);
+        }
+        .nav-tab-item.active svg {
+            stroke: var(--primary-navy);
+            stroke-width: 2.3;
+        }
+
+        /* 5. Android Bottom Navigation Keys */
+        .android-nav-keys {
+            background: #000000;
+            padding: 8px 0 10px 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .nav-key {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #888888;
+            opacity: 0.7;
+        }
+        .nav-key.square { border-radius: 2px; }
+        .nav-key.circle { border-radius: 50%; }
+        .nav-key.triangle {
+            width: 0;
+            height: 0;
+            border: none;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-right: 12px solid #888888;
+        }
+
+        #hiddenChatFile { display: none; }
+        #hiddenFormFile { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+
+        <!-- 1. Android Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span id="statusBarClock">14:54</span>
+                <span style="font-size: 0.75rem;">👻</span>
+            </div>
+            <div class="status-icons">
+                <span>⏰</span>
+                <span>🎧</span>
+                <span style="font-size: 0.65rem; border: 1px solid white; padding: 1px 3px; border-radius: 3px;">VoLTE</span>
+                <span>4G</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <!-- 2. Dynamic Top Header -->
+        <div class="app-header" id="appHeader">
+            
+            <!-- Home Header Style (Screenshot 2: Feed/Raise/Complaints/Profiles) -->
+            <div class="header-home" id="headerHome">
+                <div class="home-user-info">
+                    <div class="app-logo-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span>वार्डमित्र</span>
+                    </div>
+                    <div class="greeting-text">
+                        <h3>Welcome back,</h3>
+                        <p id="headerUserEmail">adityabhagat4216...</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="header-icon-btn" onclick="captureGPSLocation()" title="GPS Location">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </button>
+                    <button class="header-icon-btn" onclick="showNotificationPopup()" title="Notifications">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Header Style (Screenshot 1: AI Chat) -->
+            <div class="header-chat" id="headerChat">
+                <div class="chat-header-left">
+                    <button class="back-btn" onclick="switchMobileTab('feed')" title="Back to Feed">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    </button>
+                    <div class="robot-avatar">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+                    </div>
+                    <div class="chat-info">
+                        <h2>WardMitra AI</h2>
+                        <p>Marathi NLP · Ward 19A, KDMC</p>
+                    </div>
+                </div>
+                <div class="online-pill">
+                    <div class="online-dot"></div>
+                    Online
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 3. App Body Container -->
+        <div class="app-body" id="appBody">
+
+            <!-- TAB 1: FEED (Screenshot 2) -->
+            <div id="tabFeedView">
+                <div class="ward-banner-card">
+                    <h4>🏛️ प्रभाग कक्ष: Ward 19A (KDMC)</h4>
+                    <p>नागरी तक्रार निवारण व प्रभागनिहाय थेट सहाय्यता प्रणाली. आपल्या प्रभागातील समस्यांची तत्काळ नोंद करा.</p>
+                </div>
+
+                <!-- Empty state matching Screenshot 2: "No announcements available" -->
+                <div class="announcement-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <p>No announcements available</p>
+                </div>
+
+                <!-- Quick Action Cards -->
+                <div class="quick-action-row">
+                    <div class="action-card" onclick="switchMobileTab('chat')">
+                        <div class="act-icon">🤖</div>
+                        <span>AI चॅटबॉट सुरू करा</span>
+                    </div>
+                    <div class="action-card" onclick="switchMobileTab('raise')">
+                        <div class="act-icon">📝</div>
+                        <span>तक्रार नोंदवा (Raise)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: AI CHAT (Screenshot 1) -->
+            <div id="tabChatView">
+                <div class="chat-scroll-area" id="chatScrollArea">
+                    <!-- Default Bot Welcome Message -->
+                    <div class="msg-row bot">
+                        <div class="bot-circle-icon">🤖</div>
+                        <div class="bubble bot">
+                            <div class="bubble-label">WARDMITRA AI</div>
+                            <div>
+                                Hello adityabhagat4216@gmail.com! 👋 I'm here to help you register your complaint. Please describe the issue you're facing, or upload a photo/video with details about the problem.
+                            </div>
+                            <div class="bubble-time" id="chatInitialTime">2:39 PM</div>
+                        </div>
+                    </div>
+
+                    <!-- Typing indicator -->
+                    <div class="msg-row bot" id="chatTypingRow" style="display: none;">
+                        <div class="bot-circle-icon">🤖</div>
+                        <div class="typing-box" id="chatTypingBox" style="display: flex;">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">AI विचार करत आहे...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Chips -->
+                <div class="chat-chips">
+                    <span class="chip-btn" onclick="sendQuickMessage('वाकड ब्रिजजवळ रस्त्यावर मोठा खड्डा पडला आहे.')">🕳️ Pothole (खड्डा)</span>
+                    <span class="chip-btn" onclick="sendQuickMessage('थेरगाव मुख्य रस्त्यावर कचराकुंडी भरून दुर्गंधी सुटली आहे.')">🗑️ Garbage (कचरा)</span>
+                    <span class="chip-btn" onclick="sendQuickMessage('ड्रेनेज लाईन तुंबून रस्त्यावर सांडपाणी वाहत आहे.')">🌊 Drainage (ड्रेनेज)</span>
+                    <span class="chip-btn" onclick="sendQuickMessage('मुख्य पाईपलाईन फुटल्याने पिण्याचे पाणी वाया जात आहे.')">🚰 Water Leak</span>
+                    <span class="chip-btn" onclick="sendQuickMessage('गेल्या २ दिवसांपासून रस्त्यावरील पथदिवे बंद आहेत.')">💡 Streetlight</span>
+                    <span class="chip-btn danger" onclick="sendQuickMessage('येथे कचरा साचला आहे आणि महापालिका अधिकारी भिकारचोट आहेत.')">🚫 Profanity Test</span>
+                </div>
+
+                <!-- Photo Preview Strip -->
+                <div class="attachment-bar" id="chatAttachmentBar">
+                    <div class="attachment-thumb">
+                        <img id="chatThumbImg" src="" alt="Thumbnail">
+                        <span id="chatThumbName">photo.jpg</span>
+                    </div>
+                    <button class="btn-clear" onclick="clearChatPhoto()">✕</button>
+                </div>
+
+                <!-- Chat Input Bar -->
+                <div class="chat-bottom-bar">
+                    <button class="circle-btn" onclick="triggerChatCamera()" title="Upload Photo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    </button>
+                    <input type="file" id="hiddenChatFile" accept="image/*" onchange="onChatPhotoSelected(event)">
+
+                    <button class="circle-btn" onclick="triggerChatVoice()" id="chatMicBtn" title="Voice Input">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                    </button>
+
+                    <input type="text" class="input-pill" id="chatInputText" placeholder="Your Message" onkeydown="if(event.key==='Enter') executeChatSend();">
+
+                    <button class="btn-send-mint" onclick="executeChatSend()" title="Send">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 3: RAISE COMPLAINT FORM -->
+            <div id="tabRaiseView">
+                <div class="form-card">
+                    <h3 style="color: var(--primary-navy); font-size: 1.05rem;">📝 नवी तक्रार नोंदणी</h3>
+                    
+                    <div>
+                        <label class="form-label">तक्रारीचे वर्णन (Description):</label>
+                        <textarea class="form-input-text" id="formDesc" rows="3" placeholder="आपल्या समस्येचे वर्णन येथे टाईप करा..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="form-label">स्थान / GPS लोकेशन:</label>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="text" class="form-input-text" id="formLat" placeholder="Lat (18.6010)" readonly style="font-size: 0.8rem;">
+                            <input type="text" class="form-input-text" id="formLng" placeholder="Lng (73.7630)" readonly style="font-size: 0.8rem;">
+                            <button class="circle-btn" type="button" onclick="captureGPSLocation()" title="GPS Get">📍</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label">समस्येचा फोटो (Photo Evidence):</label>
+                        <div class="upload-dropzone" onclick="document.getElementById('hiddenFormFile').click()">
+                            <p id="formUploadNotice" style="font-size: 0.85rem; color: #64748b;">📷 फोटो निवडण्यासाठी येथे टॅप करा</p>
+                            <img id="formPreviewImg" style="display:none; max-height: 120px; border-radius: 8px; margin-top: 6px; margin-left: auto; margin-right: auto;" alt="Preview">
+                        </div>
+                        <input type="file" id="hiddenFormFile" accept="image/*" onchange="onFormPhotoSelected(event)">
+                    </div>
+
+                    <div>
+                        <label class="form-label">प्राधान्य (Priority):</label>
+                        <select class="form-input-text" id="formPriority">
+                            <option value="">🤖 AI Auto-Detect (स्वयंचलित)</option>
+                            <option value="HIGH">🚨 High / तातडीचे</option>
+                            <option value="MEDIUM">⚡ Medium / मध्यम</option>
+                            <option value="LOW">ℹ️ Low / सर्वसाधारण</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-submit-full" id="btnFormSubmit" onclick="submitDirectForm()">🚀 तक्रार सबमिट करा</button>
+                </div>
+            </div>
+
+            <!-- TAB 4: COMPLAINTS / TRACK -->
+            <div id="tabComplaintsView">
+                <div class="form-card">
+                    <h3 style="color: var(--primary-navy); font-size: 1.05rem;">🔍 तक्रार स्थिती तपासा (Track)</h3>
+                    <div class="track-search-bar">
+                        <input type="text" class="form-input-text" id="trackInput" placeholder="उदा. WM-20260916-1045">
+                        <button class="circle-btn" onclick="searchTicketStatus()" style="border-radius: 10px; width: 44px; height: 40px;">🔍</button>
+                    </div>
+
+                    <div id="trackDetailsBox" style="display: none; flex-direction: column; gap: 10px; margin-top: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">
+                            <div>
+                                <h4 id="tktNum" style="color: var(--primary-navy); font-size: 0.95rem;">-</h4>
+                                <span id="tktCategory" style="font-size: 0.78rem; color: #64748b;">-</span>
+                            </div>
+                            <span class="chip-badge chip-green" id="tktStatusBadge">REGISTERED</span>
+                        </div>
+
+                        <div class="card-ticket" style="background: #f1f5f9;">
+                            <div class="card-ticket-row"><span>प्रभाग:</span><span id="tktWard" style="font-weight:600;">-</span></div>
+                            <div class="card-ticket-row"><span>नेमलेला कामगार:</span><span id="tktWorker" style="font-weight:600;">-</span></div>
+                            <div class="card-ticket-row"><span>निकालाचा वेळ (SLA):</span><span id="tktSla">-</span></div>
+                            <div class="card-ticket-row"><span>मॉडरेशन तपासणी:</span><span class="chip-badge chip-green" id="tktModBadge">सुरक्षित</span></div>
+                        </div>
+
+                        <!-- 3 Level Escalation Chain -->
+                        <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: 10px; padding: 10px; font-size: 0.8rem;">
+                            <div style="font-weight: 700; color: var(--primary-navy); margin-bottom: 6px;">🏛️ ३-स्तरीय एस्केलेशन साखळी:</div>
+                            <div id="tktEscalationChain" style="display: flex; flex-direction: column; gap: 4px; color: #334155;">
+                                <!-- Dynamic items -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: PROFILES -->
+            <div id="tabProfilesView">
+                <div class="profile-card">
+                    <div class="avatar-circle-large">👤</div>
+                    <h3 style="font-size: 1.05rem; color: var(--text-dark);">Aditya Bhagat</h3>
+                    <p style="font-size: 0.82rem; color: #64748b;">adityabhagat4216@gmail.com</p>
+                    <span class="chip-badge chip-green">सत्यापित नागरिक (Verified)</span>
+                </div>
+
+                <div class="form-card">
+                    <h4 style="color: var(--primary-navy); font-size: 0.95rem;">🏛️ महापालिका प्रभाग संपर्क</h4>
+                    <div style="font-size: 0.84rem; color: #475569; display: flex; flex-direction: column; gap: 6px;">
+                        <div><strong>प्रभाग:</strong> Ward 19A, KDMC / PCMC</div>
+                        <div><strong>प्रभाग अधिकारी:</strong> श्री. राजेंद्र माने (Ward Officer)</div>
+                        <div><strong>कनिष्ठ अभियंता (Civil):</strong> Er. संदीप माने (9822100046)</div>
+                        <div><strong>आरोग्य निरीक्षक (Sanitary):</strong> श्री. नितीन शिंदे (9822100047)</div>
+                        <div><strong>सारथी हेल्पलाईन:</strong> 020-67333333 / 1800 233 7382</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 4. Bottom Navigation Bar (5 Tabs matching Screenshot 2!) -->
+        <div class="bottom-nav-bar">
+            <!-- 1. Feed -->
+            <button class="nav-tab-item active" id="btnNavFeed" onclick="switchMobileTab('feed')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+                    <line x1="8" y1="7" x2="16" y2="7"></line>
+                    <line x1="8" y1="11" x2="16" y2="11"></line>
+                    <line x1="8" y1="15" x2="12" y2="15"></line>
+                </svg>
+                <span>Feed</span>
+            </button>
+
+            <!-- 2. AI Chat (Screenshot 1) -->
+            <button class="nav-tab-item" id="btnNavChat" onclick="switchMobileTab('chat')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>AI Chat</span>
+            </button>
+
+            <!-- 3. Raise -->
+            <button class="nav-tab-item" id="btnNavRaise" onclick="switchMobileTab('raise')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                <span>Raise</span>
+            </button>
+
+            <!-- 4. Complaints -->
+            <button class="nav-tab-item" id="btnNavComplaints" onclick="switchMobileTab('complaints')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <span>Complaints</span>
+            </button>
+
+            <!-- 5. Profiles -->
+            <button class="nav-tab-item" id="btnNavProfiles" onclick="switchMobileTab('profiles')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Profiles</span>
+            </button>
+        </div>
+
+        <!-- 5. Android Bottom Navigation Keys -->
+        <div class="android-nav-keys">
+            <div class="nav-key square"></div>
+            <div class="nav-key circle"></div>
+            <div class="nav-key triangle"></div>
+        </div>
+
+    </div>
+
+    <script>
+        // Clock updater
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('statusBarClock').innerText = `${h}:${m}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        let currentActiveTab = 'feed';
+        let userEmail = 'adityabhagat4216@gmail.com';
+        let currentLat = 18.6010;
+        let currentLng = 73.7630;
+        let chatPhotoFile = null;
+        let formPhotoFile = null;
+
+        // Auto GPS capture
+        function captureGPSLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        currentLat = pos.coords.latitude;
+                        currentLng = pos.coords.longitude;
+                        document.getElementById('formLat').value = currentLat.toFixed(4);
+                        document.getElementById('formLng').value = currentLng.toFixed(4);
+                        alert(`📍 अचूक GPS प्राप्त: ${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`);
+                    },
+                    (err) => {
+                        document.getElementById('formLat').value = currentLat.toFixed(4);
+                        document.getElementById('formLng').value = currentLng.toFixed(4);
+                    }
+                );
+            }
+        }
+        captureGPSLocation();
+
+        function showNotificationPopup() {
+            alert("🔔 कोणत्याही नव्या सूचना उपलब्ध नाहीत. (No new notifications)");
+        }
+
+        // Tab Switching Engine
+        function switchMobileTab(tab) {
+            currentActiveTab = tab;
+
+            // Hide all tab views
+            document.getElementById('tabFeedView').style.display = 'none';
+            document.getElementById('tabChatView').style.display = 'none';
+            document.getElementById('tabRaiseView').style.display = 'none';
+            document.getElementById('tabComplaintsView').style.display = 'none';
+            document.getElementById('tabProfilesView').style.display = 'none';
+
+            // Remove active classes
+            document.querySelectorAll('.nav-tab-item').forEach(btn => btn.classList.remove('active'));
+
+            // Toggle Header Styles
+            if (tab === 'chat') {
+                document.getElementById('headerHome').style.display = 'none';
+                document.getElementById('headerChat').style.display = 'flex';
+                document.getElementById('tabChatView').style.display = 'flex';
+                document.getElementById('btnNavChat').classList.add('active');
+                scrollChatToBottom();
+            } else {
+                document.getElementById('headerChat').style.display = 'none';
+                document.getElementById('headerHome').style.display = 'flex';
+
+                if (tab === 'feed') {
+                    document.getElementById('tabFeedView').style.display = 'flex';
+                    document.getElementById('btnNavFeed').classList.add('active');
+                } else if (tab === 'raise') {
+                    document.getElementById('tabRaiseView').style.display = 'flex';
+                    document.getElementById('btnNavRaise').classList.add('active');
+                    document.getElementById('formLat').value = currentLat.toFixed(4);
+                    document.getElementById('formLng').value = currentLng.toFixed(4);
+                } else if (tab === 'complaints') {
+                    document.getElementById('tabComplaintsView').style.display = 'flex';
+                    document.getElementById('btnNavComplaints').classList.add('active');
+                } else if (tab === 'profiles') {
+                    document.getElementById('tabProfilesView').style.display = 'flex';
+                    document.getElementById('btnNavProfiles').classList.add('active');
+                }
+            }
+        }
+
+        // --- AI CHAT FUNCTIONS ---
+        function triggerChatCamera() {
+            document.getElementById('hiddenChatFile').click();
+        }
+
+        function onChatPhotoSelected(event) {
+            const file = event.target.files[0];
+            if (file) {
+                chatPhotoFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('chatThumbImg').src = e.target.result;
+                    document.getElementById('chatThumbName').innerText = file.name;
+                    document.getElementById('chatAttachmentBar').style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearChatPhoto() {
+            chatPhotoFile = null;
+            document.getElementById('hiddenChatFile').value = '';
+            document.getElementById('chatAttachmentBar').style.display = 'none';
+        }
+
+        function triggerChatVoice() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const input = document.getElementById('chatInputText');
+            const micBtn = document.getElementById('chatMicBtn');
+
+            if (SpeechRecognition) {
+                const rec = new SpeechRecognition();
+                rec.lang = 'mr-IN';
+                rec.start();
+                micBtn.style.background = '#dc2626';
+
+                rec.onresult = (e) => {
+                    input.value = e.results[0][0].transcript;
+                    micBtn.style.background = '#0b3b64';
+                };
+                rec.onerror = () => { micBtn.style.background = '#0b3b64'; };
+                rec.onend = () => { micBtn.style.background = '#0b3b64'; };
+            } else {
+                input.value = "वाकड चौकात खड्डा पडला आहे, कृपया लवकर काम करा.";
+            }
+        }
+
+        function sendQuickMessage(text) {
+            document.getElementById('chatInputText').value = text;
+            executeChatSend();
+        }
+
+        function getFormattedTime() {
+            const now = new Date();
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${m} ${ampm}`;
+        }
+
+        async function executeChatSend() {
+            const input = document.getElementById('chatInputText');
+            const text = input.value.trim();
+
+            if (!text && !chatPhotoFile) return;
+
+            const timeStr = getFormattedTime();
+
+            // Render User Bubble
+            renderUserBubble(text, chatPhotoFile, timeStr);
+
+            const fileToSend = chatPhotoFile;
+            input.value = '';
+            clearChatPhoto();
+
+            // Show Typing Indicator
+            toggleChatTyping(true);
+
+            // Call Backend API
+            const formData = new FormData();
+            formData.append('description', text || "Photo evidence complaint");
+            formData.append('latitude', currentLat);
+            formData.append('longitude', currentLng);
+            formData.append('citizen_phone', userEmail);
+
+            if (fileToSend) {
+                formData.append('photo', fileToSend);
+            }
+
+            try {
+                const res = await fetch('/api/v1/complaints/register', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                toggleChatTyping(false);
+
+                if (res.ok) {
+                    renderBotTicketCard(data, getFormattedTime());
+                } else {
+                    renderBotPlainBubble(`⚠️ त्रुटी आली: ${data.detail || "तक्रार नोंदवण्यात अडचण आली."}`, getFormattedTime());
+                }
+            } catch (err) {
+                toggleChatTyping(false);
+                renderBotPlainBubble(`⚠️ सर्व्हर त्रुटी: ${err.message}`, getFormattedTime());
+            }
+        }
+
+        function renderUserBubble(text, file, time) {
+            const container = document.getElementById('chatScrollArea');
+            const typingRow = document.getElementById('chatTypingRow');
+
+            const row = document.createElement('div');
+            row.className = 'msg-row user';
+
+            let imgTag = '';
+            if (file) {
+                const url = URL.createObjectURL(file);
+                imgTag = `<img src="${url}" class="bubble-image" alt="evidence">`;
+            }
+
+            row.innerHTML = `
+                <div class="bubble user">
+                    ${text ? `<div>${text}</div>` : ''}
+                    ${imgTag}
+                    <div class="bubble-time">${time}</div>
+                </div>
+            `;
+            container.insertBefore(row, typingRow);
+            scrollChatToBottom();
+        }
+
+        function renderBotPlainBubble(msg, time) {
+            const container = document.getElementById('chatScrollArea');
+            const typingRow = document.getElementById('chatTypingRow');
+
+            const row = document.createElement('div');
+            row.className = 'msg-row bot';
+            row.innerHTML = `
+                <div class="bot-circle-icon">🤖</div>
+                <div class="bubble bot">
+                    <div class="bubble-label">WARDMITRA AI</div>
+                    <div>${msg}</div>
+                    <div class="bubble-time">${time}</div>
+                </div>
+            `;
+            container.insertBefore(row, typingRow);
+            scrollChatToBottom();
+        }
+
+        function renderBotTicketCard(data, time) {
+            const container = document.getElementById('chatScrollArea');
+            const typingRow = document.getElementById('chatTypingRow');
+
+            const isRejected = (data.moderation_status === 'REJECTED');
+            const row = document.createElement('div');
+            row.className = 'msg-row bot';
+
+            let cardContent = '';
+
+            if (isRejected) {
+                cardContent = `
+                    <div style="color: #dc2626; font-weight: 700; margin-bottom: 4px;">🚫 तक्रार नाकारण्यात आली!</div>
+                    <div style="font-size: 0.84rem; color: #475569;">
+                        ${data.message || "आपल्या तक्रारीमध्ये आक्षेपार्ह मजकूर किंवा अयोग्य फोटो आढळल्याने ती प्रणालीद्वारे नाकारण्यात आली आहे."}
+                    </div>
+                    <div class="card-ticket" style="border-color: #fca5a5; background: #fff5f5;">
+                        <div class="card-ticket-row"><span>स्थिती:</span><span class="chip-badge chip-red">BLOCKED (आक्षेपार्ह)</span></div>
+                        <div class="card-ticket-row"><span>कारण:</span><span style="color: #b91c1c; font-weight: 600;">${data.fraud_reason || data.moderation_reason || 'Profanity violation'}</span></div>
+                    </div>
+                `;
+            } else {
+                cardContent = `
+                    <div style="color: var(--primary-navy); font-weight: 700; margin-bottom: 4px;">🎉 आपली तक्रार नोंदवली गेली आहे!</div>
+                    <div style="font-size: 0.84rem; color: #475569;">
+                        AI ने तक्रारीचे वर्गीकरण केले असून संबंधित प्रभागातील अभियंत्याकडे वर्ग करण्यात आली आहे.
+                    </div>
+                    <div class="card-ticket">
+                        <div class="card-ticket-header">
+                            <span>🎫 तिकीट: ${data.ticket_id}</span>
+                            <span class="chip-badge chip-green">नोंदणीकृत</span>
+                        </div>
+                        <div class="card-ticket-row"><span>प्रकार:</span><span style="font-weight: 600;">${data.detected_category} (${data.category_name_mr || ''})</span></div>
+                        <div class="card-ticket-row"><span>विश्वासार्हता:</span><span>${(data.confidence * 100).toFixed(1)}% (YOLO11 / NLP)</span></div>
+                        <div class="card-ticket-row"><span>प्रभाग:</span><span style="font-weight:600; color:var(--primary-navy);">Ward ${data.ward || '19A, KDMC'}</span></div>
+                        <div class="card-ticket-row"><span>कामगार:</span><span style="font-weight:600;">${data.assigned_worker_name || 'क्षेत्रीय अभियंता'}</span></div>
+                        <div class="card-ticket-row"><span>SLA वेळ:</span><span class="chip-badge chip-orange">${data.sla_hours} तास</span></div>
+                        <div class="card-ticket-row"><span>मॉडरेशन:</span><span class="chip-badge chip-green">🛡️ सुरक्षित (Passed)</span></div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button onclick="document.getElementById('trackInput').value='${data.ticket_id}'; switchMobileTab('complaints'); searchTicketStatus();" style="background: none; border: none; color: #0284c7; font-weight: 700; cursor: pointer; font-size: 0.8rem;">
+                            🔍 ही तक्रार ट्रॅक करा →
+                        </button>
+                    </div>
+                `;
+            }
+
+            row.innerHTML = `
+                <div class="bot-circle-icon">🤖</div>
+                <div class="bubble bot">
+                    <div class="bubble-label">WARDMITRA AI</div>
+                    ${cardContent}
+                    <div class="bubble-time">${time}</div>
+                </div>
+            `;
+            container.insertBefore(row, typingRow);
+            scrollChatToBottom();
+        }
+
+        function toggleChatTyping(show) {
+            document.getElementById('chatTypingRow').style.display = show ? 'flex' : 'none';
+            if (show) scrollChatToBottom();
+        }
+
+        function scrollChatToBottom() {
+            const area = document.getElementById('chatScrollArea');
+            setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
+        }
+
+        // --- DIRECT FORM FUNCTIONS (RAISE TAB) ---
+        function onFormPhotoSelected(e) {
+            const file = e.target.files[0];
+            if (file) {
+                formPhotoFile = file;
+                const r = new FileReader();
+                r.onload = (ev) => {
+                    const img = document.getElementById('formPreviewImg');
+                    img.src = ev.target.result;
+                    img.style.display = 'block';
+                    document.getElementById('formUploadNotice').innerText = `✓ फोटो निवडला: ${file.name}`;
+                };
+                r.readAsDataURL(file);
+            }
+        }
+
+        async function submitDirectForm() {
+            const desc = document.getElementById('formDesc').value.trim();
+            const prio = document.getElementById('formPriority').value;
+            const btn = document.getElementById('btnFormSubmit');
+
+            if (!desc && !formPhotoFile) {
+                alert("कृपया तक्रारीचे वर्णन लिहा किंवा फोटो निवडा.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "नोंदणी होत आहे...";
+
+            const fd = new FormData();
+            fd.append('description', desc || "Direct Form Grievance");
+            fd.append('latitude', currentLat);
+            fd.append('longitude', currentLng);
+            fd.append('citizen_phone', userEmail);
+            if (prio) fd.append('priority', prio);
+            if (formPhotoFile) fd.append('photo', formPhotoFile);
+
+            try {
+                const res = await fetch('/api/v1/complaints/register', { method: 'POST', body: fd });
+                const data = await res.json();
+                btn.disabled = false;
+                btn.innerText = "🚀 तक्रार सबमिट करा";
+
+                if (res.ok) {
+                    alert(`✅ तक्रार यशस्वीरीत्या नोंदवली!\nतिकीट क्र: ${data.ticket_id}\nविभाग: ${data.assigned_department}\nप्रभाग: Ward ${data.ward || '19A'}`);
+                    document.getElementById('formDesc').value = '';
+                    formPhotoFile = null;
+                    document.getElementById('formPreviewImg').style.display = 'none';
+                    document.getElementById('formUploadNotice').innerText = "📷 फोटो निवडण्यासाठी येथे टॅप करा";
+                    
+                    // Switch to complaints tab and view it
+                    document.getElementById('trackInput').value = data.ticket_id;
+                    switchMobileTab('complaints');
+                    searchTicketStatus();
+                } else {
+                    alert("त्रुटी: " + (data.detail || "तक्रार नोंदवता आली नाही."));
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerText = "🚀 तक्रार सबमिट करा";
+                alert("सर्व्हर त्रुटी: " + err.message);
+            }
+        }
+
+        // --- TRACKING COMPLAINTS FUNCTIONS ---
+        async function searchTicketStatus() {
+            const tkt = document.getElementById('trackInput').value.trim();
+            if (!tkt) return;
+
+            try {
+                const res = await fetch(`/api/v1/complaints/${tkt}/status`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('trackDetailsBox').style.display = 'flex';
+                    document.getElementById('tktNum').innerText = data.ticket_id;
+                    document.getElementById('tktCategory').innerText = `${data.detected_category} (${data.assigned_department})`;
+                    document.getElementById('tktStatusBadge').innerText = data.status;
+                    document.getElementById('tktWard').innerText = `Ward ${data.ward_number || '19A, KDMC'}`;
+                    document.getElementById('tktWorker').innerText = `${data.assigned_worker_name || 'कनिष्ठ अभियंता'} (${data.assigned_worker_contact || ''})`;
+                    document.getElementById('tktSla').innerText = `${data.sla_hours} तास (Hours)`;
+
+                    const modBadge = document.getElementById('tktModBadge');
+                    if (data.moderation_status === 'REJECTED' || data.is_fraud) {
+                        modBadge.className = 'chip-badge chip-red';
+                        modBadge.innerText = 'BLOCKED (अवैध/आक्षेपार्ह)';
+                    } else {
+                        modBadge.className = 'chip-badge chip-green';
+                        modBadge.innerText = 'सुरक्षित (Passed)';
+                    }
+
+                    // Render Escalation chain
+                    const chainBox = document.getElementById('tktEscalationChain');
+                    chainBox.innerHTML = `
+                        <div>👷 <strong>Level 1 (कामगार):</strong> ${data.assigned_worker_name || 'Er. संदीप माने'} (${data.assigned_worker_contact || ''})</div>
+                        <div>👔 <strong>Level 2 (पर्यवेक्षक):</strong> ${data.supervisor_name || 'श्री. राजेंद्र माने'} (${data.supervisor_contact || ''})</div>
+                        <div>🏛️ <strong>Level 3 (विभागप्रमुख):</strong> ${data.hod_name || 'मुख्य अभियंता'} (${data.hod_contact || ''})</div>
+                    `;
+                } else {
+                    alert("तिकीट आढळले नाही: " + (data.detail || "कृपया अचूक क्रमांक तपासा."));
+                }
+            } catch (err) {
+                alert("तक्रार स्थिती तपासताना त्रुटी: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

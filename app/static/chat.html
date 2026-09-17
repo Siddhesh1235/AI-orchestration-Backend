@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WardMitra AI - Mobile Chatbot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #0f172a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        /* Phone Mockup Wrapper (Centers nicely on desktop, 100% on phone) */
+        .phone-frame {
+            width: 100%;
+            max-width: 420px;
+            height: 94vh;
+            max-height: 890px;
+            background: #eef4f8;
+            border-radius: 36px;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 10px #1e293b;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0;
+                background: #eef4f8;
+            }
+            .phone-frame {
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+
+        /* 1. Android Status Bar */
+        .status-bar {
+            background: #0b3b64;
+            color: #ffffff;
+            padding: 8px 18px 4px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .status-icons {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.74rem;
+        }
+
+        /* 2. Top Header */
+        .chat-header {
+            background: #0b3b64;
+            color: #ffffff;
+            padding: 10px 14px 14px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(11, 59, 100, 0.25);
+            z-index: 10;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            color: #ffffff;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            display: flex;
+            align-items: center;
+        }
+        .robot-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #174d7d;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .header-info h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #ffffff;
+        }
+        .header-info p {
+            font-size: 0.72rem;
+            color: #9ac2e8;
+            margin-top: 2px;
+            letter-spacing: 0.2px;
+        }
+        .online-pill {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            color: #34d399;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .online-dot {
+            width: 7px;
+            height: 7px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        /* 3. Chat Messages Body */
+        .chat-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #eef4f8;
+            scroll-behavior: smooth;
+        }
+
+        /* Message Row */
+        .message-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .message-row.bot {
+            justify-content: flex-start;
+        }
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        .bot-icon-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #0b3b64;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .message-bubble {
+            max-width: 82%;
+            border-radius: 18px;
+            padding: 12px 14px;
+            font-size: 0.88rem;
+            line-height: 1.45;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message-bubble.bot {
+            background: #ffffff;
+            color: #1e293b;
+            border-top-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .message-bubble.user {
+            background: #0b3b64;
+            color: #ffffff;
+            border-top-right-radius: 4px;
+            box-shadow: 0 2px 8px rgba(11, 59, 100, 0.25);
+        }
+
+        .bubble-tag {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 4px;
+        }
+
+        .msg-time {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .message-bubble.user .msg-time {
+            color: #cbd5e1;
+        }
+
+        /* Attached image in user/bot message */
+        .msg-image {
+            width: 100%;
+            max-height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-top: 6px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        /* Grievance Result Card inside Bot Message */
+        .ticket-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.82rem;
+        }
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            color: #0b3b64;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 5px;
+        }
+        .ticket-row {
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+        .ticket-row span:first-child {
+            color: #64748b;
+        }
+        .badge-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-orange { background: #fef3c7; color: #92400e; }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 14px;
+            background: #ffffff;
+            border-radius: 18px;
+            border-top-left-radius: 4px;
+            width: fit-content;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .typing-dot {
+            width: 7px;
+            height: 7px;
+            background: #0b3b64;
+            border-radius: 50%;
+            animation: pulse 1.2s infinite ease-in-out;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes pulse {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 4. Quick Suggestion Chips */
+        .chips-scroll {
+            display: flex;
+            gap: 7px;
+            overflow-x: auto;
+            padding: 6px 14px 4px 14px;
+            background: #eef4f8;
+            scrollbar-width: none;
+        }
+        .chips-scroll::-webkit-scrollbar { display: none; }
+        .quick-chip {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: #0b3b64;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .quick-chip:hover {
+            background: #0b3b64;
+            color: #ffffff;
+            border-color: #0b3b64;
+        }
+        .quick-chip.danger {
+            border-color: #f87171;
+            color: #dc2626;
+        }
+        .quick-chip.danger:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        /* 5. Photo Attachment Preview Chip */
+        .preview-strip {
+            display: none;
+            padding: 6px 14px;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .preview-thumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: #334155;
+            font-weight: 500;
+        }
+        .preview-thumb img {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+        .remove-img-btn {
+            background: #f1f5f9;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        /* 6. Bottom Input Bar */
+        .chat-input-bar {
+            background: #ffffff;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #e2e8f0;
+            z-index: 10;
+        }
+
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #0b3b64;
+            color: #ffffff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.1s, background 0.15s;
+        }
+        .icon-btn:hover {
+            background: #124d80;
+        }
+        .icon-btn:active {
+            transform: scale(0.92);
+        }
+
+        .msg-input {
+            flex: 1;
+            background: #f1f5f9;
+            border: 1px solid transparent;
+            border-radius: 24px;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            color: #1e293b;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .msg-input:focus {
+            background: #ffffff;
+            border-color: #0b3b64;
+            box-shadow: 0 0 0 2px rgba(11, 59, 100, 0.12);
+        }
+
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #10b981;
+            color: #ffffff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+            transition: transform 0.15s, background 0.15s;
+        }
+        .send-btn:hover {
+            background: #059669;
+        }
+        .send-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* 7. Android Bottom Navigation Bar */
+        .android-nav-bar {
+            background: #000000;
+            padding: 8px 0 10px 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .nav-key {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #888888;
+            opacity: 0.7;
+        }
+        .nav-key.square { border-radius: 2px; }
+        .nav-key.circle { border-radius: 50%; }
+        .nav-key.triangle {
+            width: 0;
+            height: 0;
+            border: none;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-right: 12px solid #888888;
+        }
+
+        /* Hidden elements */
+        #hiddenPhotoInput { display: none; }
+
+        /* Portal Switch Pill on Desktop */
+        .portal-switch {
+            position: absolute;
+            top: -45px;
+            right: 0;
+            background: #334155;
+            color: #f8fafc;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .portal-switch:hover {
+            background: #475569;
+        }
+        @media (max-width: 480px) {
+            .portal-switch { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        <!-- Switch to Full Portal on Desktop -->
+        <a href="/static/index.html" class="portal-switch">🖥️ फुल पोर्टल डॅशबोर्ड (Admin Portal) →</a>
+
+        <!-- 1. Android Status Bar -->
+        <div class="status-bar">
+            <span id="liveClock">14:40</span>
+            <div class="status-icons">
+                <span>⏰</span>
+                <span>🎧</span>
+                <span style="font-size: 0.65rem; border: 1px solid white; padding: 1px 3px; border-radius: 3px;">VoLTE</span>
+                <span>4G</span>
+                <span>🔋</span>
+            </div>
+        </div>
+
+        <!-- 2. Top App Bar -->
+        <div class="chat-header">
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='/static/index.html'" title="Back to Portal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </button>
+                <div class="robot-avatar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+                </div>
+                <div class="header-info">
+                    <h2>WardMitra AI</h2>
+                    <p>Marathi NLP · Ward 19A, KDMC</p>
+                </div>
+            </div>
+            <div class="online-pill">
+                <div class="online-dot"></div>
+                Online
+            </div>
+        </div>
+
+        <!-- 3. Chat Messages Body -->
+        <div class="chat-body" id="chatBody">
+            
+            <!-- Default Welcome Bot Message -->
+            <div class="message-row bot">
+                <div class="bot-icon-small">🤖</div>
+                <div class="message-bubble bot">
+                    <div class="bubble-tag">WARDMITRA AI</div>
+                    <div>
+                        Hello adityabhagat4216@gmail.com! 👋 I'm here to help you register your complaint. Please describe the issue you're facing, or upload a photo/video with details about the problem.
+                    </div>
+                    <div class="msg-time" id="welcomeTime">2:39 PM</div>
+                </div>
+            </div>
+
+            <!-- Dynamic Messages will be injected here -->
+
+            <!-- Typing indicator -->
+            <div class="message-row bot" id="typingRow" style="display: none;">
+                <div class="bot-icon-small">🤖</div>
+                <div class="typing-indicator" id="typingIndicator" style="display: flex;">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">AI विश्लेषण करत आहे...</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 4. Quick Suggestion Chips -->
+        <div class="chips-scroll">
+            <span class="quick-chip" onclick="quickFill('वाकड ब्रिजजवळ रस्त्यावर मोठा खड्डा पडला आहे.')">🕳️ Pothole (खड्डा)</span>
+            <span class="quick-chip" onclick="quickFill('थेरगाव मुख्य रस्त्यावर कचराकुंडी भरून दुर्गंधी सुटली आहे.')">🗑️ Garbage (कचरा)</span>
+            <span class="quick-chip" onclick="quickFill('ड्रेनेज लाईन तुंबून रस्त्यावर सांडपाणी वाहत आहे.')">🌊 Drainage (ड्रेनेज)</span>
+            <span class="quick-chip" onclick="quickFill('मुख्य पाईपलाईन फुटल्याने पिण्याचे पाणी वाया जात आहे.')">🚰 Water Leak (पाणी गळती)</span>
+            <span class="quick-chip" onclick="quickFill('गेल्या २ दिवसांपासून रस्त्यावरील स्ट्रीटलाईट बंद आहेत.')">💡 Streetlight (पथदिवा)</span>
+            <span class="quick-chip danger" onclick="quickFill('येथे कचरा साचला आहे आणि महापालिका अधिकारी भिकारचोट आहेत.')">🚫 Profanity Test</span>
+        </div>
+
+        <!-- 5. Photo Attachment Preview Strip -->
+        <div class="preview-strip" id="previewStrip">
+            <div class="preview-thumb">
+                <img id="thumbImg" src="" alt="Thumbnail">
+                <span id="thumbName">photo.jpg</span>
+            </div>
+            <button class="remove-img-btn" onclick="clearAttachedPhoto()">✕</button>
+        </div>
+
+        <!-- 6. Bottom Input Bar -->
+        <div class="chat-input-bar">
+            <!-- Camera Button -->
+            <button class="icon-btn" onclick="triggerCamera()" title="Upload Photo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </button>
+            <input type="file" id="hiddenPhotoInput" accept="image/*" onchange="onPhotoSelected(event)">
+
+            <!-- Mic Button -->
+            <button class="icon-btn" onclick="triggerVoice()" id="micBtn" title="Voice Input">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+            </button>
+
+            <!-- Message Input -->
+            <input type="text" class="msg-input" id="messageInput" placeholder="Your Message" onkeydown="handleKeyDown(event)">
+
+            <!-- Send Button -->
+            <button class="send-btn" onclick="sendMessage()" title="Send">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+
+        <!-- 7. Android Bottom Navigation Bar -->
+        <div class="android-nav-bar">
+            <div class="nav-key square"></div>
+            <div class="nav-key circle"></div>
+            <div class="nav-key triangle"></div>
+        </div>
+    </div>
+
+    <script>
+        // Set live clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('liveClock').innerText = `${hours}:${minutes}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        let selectedPhotoFile = null;
+        let citizenEmail = "adityabhagat4216@gmail.com";
+        let defaultLat = 18.6010;
+        let defaultLng = 73.7630;
+
+        // Try getting actual browser GPS location in background
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    defaultLat = pos.coords.latitude;
+                    defaultLng = pos.coords.longitude;
+                },
+                (err) => {}
+            );
+        }
+
+        function triggerCamera() {
+            document.getElementById('hiddenPhotoInput').click();
+        }
+
+        function onPhotoSelected(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedPhotoFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('thumbImg').src = e.target.result;
+                    document.getElementById('thumbName').innerText = file.name;
+                    document.getElementById('previewStrip').style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearAttachedPhoto() {
+            selectedPhotoFile = null;
+            document.getElementById('hiddenPhotoInput').value = '';
+            document.getElementById('previewStrip').style.display = 'none';
+        }
+
+        function triggerVoice() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const input = document.getElementById('messageInput');
+            const micBtn = document.getElementById('micBtn');
+
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'mr-IN'; // Marathi speech
+                recognition.start();
+                micBtn.style.background = '#dc2626';
+
+                recognition.onresult = (event) => {
+                    const speechText = event.results[0][0].transcript;
+                    input.value = speechText;
+                    micBtn.style.background = '#0b3b64';
+                };
+                recognition.onerror = () => {
+                    micBtn.style.background = '#0b3b64';
+                };
+                recognition.onend = () => {
+                    micBtn.style.background = '#0b3b64';
+                };
+            } else {
+                // Fallback simulation
+                input.value = "वाकड चौकात खड्डा पडला आहे, कृपया लवकर काम करा.";
+            }
+        }
+
+        function quickFill(text) {
+            document.getElementById('messageInput').value = text;
+            sendMessage();
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function formatTime() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            return `${hours}:${minutes} ${ampm}`;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+
+            if (!text && !selectedPhotoFile) {
+                return;
+            }
+
+            const currentTime = formatTime();
+
+            // 1. Render User Message Bubble
+            renderUserMessage(text, selectedPhotoFile, currentTime);
+
+            // Clear input & photo preview
+            const currentPhotoFile = selectedPhotoFile;
+            input.value = '';
+            clearAttachedPhoto();
+
+            // Show Typing Indicator
+            showTyping(true);
+
+            // 2. Prepare FormData to call Python AI Orchestrator API
+            const formData = new FormData();
+            formData.append('description', text || "Photo Grievance Evidence");
+            formData.append('latitude', defaultLat);
+            formData.append('longitude', defaultLng);
+            formData.append('citizen_phone', citizenEmail);
+
+            if (currentPhotoFile) {
+                formData.append('photo', currentPhotoFile);
+            }
+
+            try {
+                const response = await fetch('/api/v1/complaints/register', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                showTyping(false);
+
+                if (response.ok) {
+                    renderBotResponse(data, formatTime());
+                } else {
+                    renderBotPlainMessage(`⚠️ त्रुटी आली: ${data.detail || "तक्रार नोंदवण्यात अडचण आली."}`, formatTime());
+                }
+            } catch (err) {
+                showTyping(false);
+                renderBotPlainMessage(`⚠️ सर्व्हरशी संपर्क होऊ शकला नाही: ${err.message}`, formatTime());
+            }
+        }
+
+        function renderUserMessage(text, file, time) {
+            const chatBody = document.getElementById('chatBody');
+            const typingRow = document.getElementById('typingRow');
+
+            const row = document.createElement('div');
+            row.className = 'message-row user';
+
+            let imgHtml = '';
+            if (file) {
+                const url = URL.createObjectURL(file);
+                imgHtml = `<img src="${url}" class="msg-image" alt="Attached evidence">`;
+            }
+
+            row.innerHTML = `
+                <div class="message-bubble user">
+                    ${text ? `<div>${text}</div>` : ''}
+                    ${imgHtml}
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+
+            chatBody.insertBefore(row, typingRow);
+            scrollBottom();
+        }
+
+        function renderBotPlainMessage(msg, time) {
+            const chatBody = document.getElementById('chatBody');
+            const typingRow = document.getElementById('typingRow');
+
+            const row = document.createElement('div');
+            row.className = 'message-row bot';
+            row.innerHTML = `
+                <div class="bot-icon-small">🤖</div>
+                <div class="message-bubble bot">
+                    <div class="bubble-tag">WARDMITRA AI</div>
+                    <div>${msg}</div>
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+            chatBody.insertBefore(row, typingRow);
+            scrollBottom();
+        }
+
+        function renderBotResponse(data, time) {
+            const chatBody = document.getElementById('chatBody');
+            const typingRow = document.getElementById('typingRow');
+
+            const isModerationRejected = (data.moderation_status === 'REJECTED');
+
+            const row = document.createElement('div');
+            row.className = 'message-row bot';
+
+            let contentHtml = '';
+
+            if (isModerationRejected) {
+                contentHtml = `
+                    <div style="color: #dc2626; font-weight: 700; margin-bottom: 4px;">🚫 तक्रार नाकारण्यात आली!</div>
+                    <div style="font-size: 0.84rem; color: #475569;">
+                        ${data.message || "आपल्या तक्रारीमध्ये आक्षेपार्ह मजकूर किंवा अयोग्य फोटो आढळल्याने ती प्रणालीद्वारे नाकारण्यात आली आहे."}
+                    </div>
+                    <div class="ticket-card" style="border-color: #fca5a5; background: #fff5f5;">
+                        <div class="ticket-row">
+                            <span>सुरक्षा स्थिती:</span>
+                            <span class="badge-pill badge-red">BLOCKED (आक्षेपार्ह)</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>कारण:</span>
+                            <span style="color: #b91c1c; font-weight: 600;">${data.fraud_reason || data.moderation_reason || 'Profanity / Abusive Language'}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                contentHtml = `
+                    <div style="color: #0b3b64; font-weight: 700; margin-bottom: 4px;">🎉 आपली तक्रार यशस्वीरित्या नोंदवली गेली आहे!</div>
+                    <div style="font-size: 0.84rem; color: #475569;">
+                        आपल्या समस्येचे AI ने वर्गीकरण केले असून संबंधित प्रभागातील अभियंत्याकडे काम सोपवण्यात आले आहे.
+                    </div>
+                    <div class="ticket-card">
+                        <div class="ticket-header">
+                            <span>🎫 तिकीट: ${data.ticket_id}</span>
+                            <span class="badge-pill badge-green">नोंदणी पूर्ण</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>वर्ग / श्रेणी:</span>
+                            <span style="font-weight: 600;">${data.detected_category} (${data.category_name_mr || ''})</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>विश्वासार्हता:</span>
+                            <span>${(data.confidence * 100).toFixed(1)}% (YOLO11 / NLP)</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>प्रभाग / Ward:</span>
+                            <span style="font-weight: 600; color: #0b3b64;">Ward ${data.ward || '19A, KDMC'}</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>नेमलेले कामगार:</span>
+                            <span style="font-weight: 600;">${data.assigned_worker_name || 'क्षेत्रीय अभियंता'}</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>निकालाची मुदत (SLA):</span>
+                            <span class="badge-pill badge-orange">${data.sla_hours} तास</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>कंटेंट मॉडरेशन:</span>
+                            <span class="badge-pill badge-green">🛡️ सुरक्षित (Passed)</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <a href="/static/index.html" style="font-size: 0.78rem; color: #0284c7; text-decoration: none; font-weight: 600;">
+                            🔍 लाईव्ह ट्रॅक करण्यासाठी येथे क्लिक करा →
+                        </a>
+                    </div>
+                `;
+            }
+
+            row.innerHTML = `
+                <div class="bot-icon-small">🤖</div>
+                <div class="message-bubble bot">
+                    <div class="bubble-tag">WARDMITRA AI</div>
+                    ${contentHtml}
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+
+            chatBody.insertBefore(row, typingRow);
+            scrollBottom();
+        }
+
+        function showTyping(show) {
+            const typingRow = document.getElementById('typingRow');
+            typingRow.style.display = show ? 'flex' : 'none';
+            if (show) scrollBottom();
+        }
+
+        function scrollBottom() {
+            const chatBody = document.getElementById('chatBody');
+            setTimeout(() => {
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }, 50);
+        }
+    </script>
+</body>
+</html>

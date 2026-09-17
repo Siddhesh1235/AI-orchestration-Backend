@@ -1,0 +1,81 @@
+"""
+Main Application Entrypoint for PCMC Sarathi AI Orchestrator.
+Configures FastAPI, SQLite ORM auto-migrations, Static Frontend mounts, and CORS.
+"""
+
+from contextlib import asynccontextmanager
+from pathlib import Path
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.config.settings import settings
+from app.database.session import engine, Base
+from app.database import models
+from app.api.routes import complaint, health
+from app.services.scheduler_service import start_auto_escalation_scheduler, stop_auto_escalation_scheduler
+
+# 1. Initialize SQLite Database Tables on startup
+Base.metadata.create_all(bind=engine)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manages application startup and clean background daemon shutdown."""
+    # Startup: launch APScheduler for automated SLA escalation
+    start_auto_escalation_scheduler(interval_seconds=60)
+    yield
+    # Shutdown: terminate scheduler cleanly
+    stop_auto_escalation_scheduler()
+
+
+# 2. FastAPI Application Instance
+app = FastAPI(
+    title="Ward Mitra - Grievance Orchestrator",
+    description="Backend AI Orchestrator powering Ward Mitra Grievance Platform (Ward-Centric Architecture)",
+    version=settings.VERSION,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan
+)
+
+# 3. CORS Middleware (Permit browser testing from any port/client)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 4. Mount Uploads and Static Directories
+static_dir = Path(__file__).parent / "static"
+static_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+upload_dir = Path(settings.UPLOAD_DIR)
+upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
+
+# 5. Include API Routers
+app.include_router(complaint.router, prefix="/api/v1")
+app.include_router(health.router, prefix="/api/v1")
+
+
+# 6. Root Route -> Redirect to Interactive Testing Portal
+@app.get("/", include_in_schema=False)
+def root_redirect():
+    """Redirects default root URL directly to the Testing Portal UI."""
+    return RedirectResponse(url="/static/index.html")
+
+
+@app.get("/chat", include_in_schema=False)
+def chat_redirect():
+    """Direct URL to the Citizen Mobile Chatbot UI."""
+    return RedirectResponse(url="/static/chat.html")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)

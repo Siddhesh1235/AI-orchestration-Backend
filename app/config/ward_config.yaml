@@ -1,0 +1,171 @@
+version: "1.0"
+project: "PCMC Sarathi AI - 32 Prabhag / Ward Master Directory"
+
+wards:
+  1:
+    ward_name_mr: "चिखली - तळवडे"
+    ward_name_en: "Chikhali - Talwade"
+    zone: "Zone A"
+    office_address: "प्रभाग १ कार्यालय, तळवडे चौक, चिखली रस्ता, पिंपरी चिंचवड"
+    ward_officer: "श्री. अनिल पाटील"
+    ward_officer_contact: "020-27411001"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. सचिन कदम (JE Civil)", contact: "9822100001" }
+      HEALTH_SWM: { name: "श्री. रमेश साळवे (आरोग्य निरीक्षक)", contact: "9822100002" }
+      WATER_SUPPLY: { name: "Er. विकास शिंदे (JE Water)", contact: "9822100003" }
+      DRAINAGE_DEPT: { name: "Er. दीपक जगताप (JE Drainage)", contact: "9822100004" }
+      ELECTRICAL: { name: "Er. महेश मोरे (JE Electrical)", contact: "9822100005" }
+
+  2:
+    ward_name_mr: "रुपीनगर - संभाजीनगर"
+    ward_name_en: "Rupeenagar - Sambhajinagar"
+    zone: "Zone A"
+    office_address: "प्रभाग २ कार्यालय, संभाजीनगर कमान, रुपीनगर"
+    ward_officer: "श्री. प्रवीण भोसले"
+    ward_officer_contact: "020-27411002"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. राहुल गाडे (JE Civil)", contact: "9822100006" }
+      HEALTH_SWM: { name: "श्री. दत्तात्रय वाघमारे (आरोग्य निरीक्षक)", contact: "9822100007" }
+      WATER_SUPPLY: { name: "Er. अमोल तांबडे (JE Water)", contact: "9822100008" }
+      DRAINAGE_DEPT: { name: "Er. किरण पवार (JE Drainage)", contact: "9822100009" }
+      ELECTRICAL: { name: "Er. नितीन चव्हाण (JE Electrical)", contact: "9822100010" }
+
+  3:
+    ward_name_mr: "यमुनानगर - निगडी"
+    ward_name_en: "Yamunanagar - Nigdi"
+    zone: "Zone A"
+    office_address: "प्रभाग ३ कार्यालय, यमुनानगर क्रीडा संकुल, निगडी"
+    ward_officer: "सौ. स्मिता देशपांडे"
+    ward_officer_contact: "020-27411003"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. प्रशांत थोरात (JE Civil)", contact: "9822100011" }
+      HEALTH_SWM: { name: "श्री. विलास गायकवाड (आरोग्य निरीक्षक)", contact: "9822100012" }
+      WATER_SUPPLY: { name: "Er. मंगेश जोशी (JE Water)", contact: "9822100013" }
+      DRAINAGE_DEPT: { name: "Er. संदीप बंडगर (JE Drainage)", contact: "9822100014" }
+      ELECTRICAL: { name: "Er. संजय लोहार (JE Electrical)", contact: "9822100015" }
+
+  4:
+    ward_name_mr: "प्राधिकरण - सेक्टर २४"
+    ward_name_en: "Pradhikaran - Sector 24"
+    zone: "Zone B"
+    office_address: "प्रभाग ४ कार्यालय, भेळ चौक, प्राधिकरण, निगडी"
+    ward_officer: "श्री. राजेंद्र कांबळे"
+    ward_officer_contact: "020-27411004"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. विजय कुंभार (JE Civil)", contact: "9822100016" }
+      HEALTH_SWM: { name: "श्री. अशोक कांबळे (आरोग्य निरीक्षक)", contact: "9822100017" }
+      WATER_SUPPLY: { name: "Er. गणेश माने (JE Water)", contact: "9822100018" }
+      DRAINAGE_DEPT: { name: "Er. तुषार शहा (JE Drainage)", contact: "9822100019" }
+      ELECTRICAL: { name: "Er. हेमंत सुर्वे (JE Electrical)", contact: "9822100020" }
+
+  5:
+    ward_name_mr: "आकुर्डी गावठाण - मोहन नगर"
+    ward_name_en: "Akurdi Gaonthan - Mohan Nagar"
+    zone: "Zone B"
+    office_address: "प्रभाग ५ कार्यालय, आकुर्डी रेल्वे स्टेशन रस्ता"
+    ward_officer: "श्री. सुनील जाधव"
+    ward_officer_contact: "020-27411005"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. बापूसाहेब चव्हाण (JE Civil)", contact: "9822100021" }
+      HEALTH_SWM: { name: "श्री. लक्ष्मण काळे (आरोग्य निरीक्षक)", contact: "9822100022" }
+      WATER_SUPPLY: { name: "Er. शेखर माने (JE Water)", contact: "9822100023" }
+      DRAINAGE_DEPT: { name: "Er. रोहन पाटील (JE Drainage)", contact: "9822100024" }
+      ELECTRICAL: { name: "Er. किरण शेलार (JE Electrical)", contact: "9822100025" }
+
+  10:
+    ward_name_mr: "भोसरी गावठाण - धावडे वस्ती"
+    ward_name_en: "Bhosari Gaonthan - Dhavade Vasti"
+    zone: "Zone C"
+    office_address: "प्रभाग १० कार्यालय, भोसरी मुख्य चौक, पीएमटी बस डेपो शेजारी"
+    ward_officer: "श्री. विजय लांडगे"
+    ward_officer_contact: "020-27411010"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. दत्तात्रय फुगे (JE Civil)", contact: "9822100026" }
+      HEALTH_SWM: { name: "श्री. मारुती गवळी (आरोग्य निरीक्षक)", contact: "9822100027" }
+      WATER_SUPPLY: { name: "Er. स्वप्नील लांडगे (JE Water)", contact: "9822100028" }
+      DRAINAGE_DEPT: { name: "Er. किरण धावडे (JE Drainage)", contact: "9822100029" }
+      ELECTRICAL: { name: "Er. सोमनाथ गोगावले (JE Electrical)", contact: "9822100030" }
+
+  15:
+    ward_name_mr: "पिंपरी गाव - मोरवाडी"
+    ward_name_en: "Pimpri Gaon - Morwadi"
+    zone: "Zone D"
+    office_address: "प्रभाग १५ कार्यालय, मुख्य पालिका भवन समोर, पिंपरी"
+    ward_officer: "श्री. उल्हास जगताप"
+    ward_officer_contact: "020-27411015"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. प्रमोद जाधवर (JE Civil)", contact: "9822100031" }
+      HEALTH_SWM: { name: "श्री. सुरेश वाघमारे (आरोग्य निरीक्षक)", contact: "9822100032" }
+      WATER_SUPPLY: { name: "Er. अमित कुलकर्णी (JE Water)", contact: "9822100033" }
+      DRAINAGE_DEPT: { name: "Er. संजय गायकवाड (JE Drainage)", contact: "9822100034" }
+      ELECTRICAL: { name: "Er. योगेश चौधरी (JE Electrical)", contact: "9822100035" }
+
+  21:
+    ward_name_mr: "पिंपळे निलख - विशाल नगर"
+    ward_name_en: "Pimple Nilakh - Vishal Nagar"
+    zone: "Zone E"
+    office_address: "प्रभाग २१ कार्यालय, विशाल नगर चौक, पिंपळे निलख"
+    ward_officer: "श्री. मकरंद निकम"
+    ward_officer_contact: "020-27411021"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. सुहास कांबळे (JE Civil)", contact: "9822100036" }
+      HEALTH_SWM: { name: "श्री. दीपक माने (आरोग्य निरीक्षक)", contact: "9822100037" }
+      WATER_SUPPLY: { name: "Er. ओंकार ननावरे (JE Water)", contact: "9822100038" }
+      DRAINAGE_DEPT: { name: "Er. रोहन साळुंखे (JE Drainage)", contact: "9822100039" }
+      ELECTRICAL: { name: "Er. चेतन पवार (JE Electrical)", contact: "9822100040" }
+
+  22:
+    ward_name_mr: "पिंपळे सौदागर - रोझलँड"
+    ward_name_en: "Pimple Saudagar - Roseland"
+    zone: "Zone F"
+    office_address: "प्रभाग २२ कार्यालय, कुणाल आयकॉन रोड, पिंपळे सौदागर"
+    ward_officer: "श्री. प्रकाश बाविस्कर"
+    ward_officer_contact: "020-27411022"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. संदीप थोरात (JE Civil)", contact: "9822100041" }
+      HEALTH_SWM: { name: "श्री. भगवान आव्हाड (आरोग्य निरीक्षक)", contact: "9822100042" }
+      WATER_SUPPLY: { name: "Er. नितीन काटे (JE Water)", contact: "9822100043" }
+      DRAINAGE_DEPT: { name: "Er. अजय मोरे (JE Drainage)", contact: "9822100044" }
+      ELECTRICAL: { name: "Er. सागर जाधव (JE Electrical)", contact: "9822100045" }
+
+  25:
+    ward_name_mr: "वाकड - कस्पटे वस्ती"
+    ward_name_en: "Wakad - Kaspate Vasti"
+    zone: "Zone G"
+    office_address: "प्रभाग २५ कार्यालय, भूमकर चौक, वाकड, पिंपरी चिंचवड"
+    ward_officer: "श्री. संदीप माने (प्रभाग अधिकारी)"
+    ward_officer_contact: "020-27411025"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. संदीप माने (JE Civil - वाकड)", contact: "9822100046" }
+      HEALTH_SWM: { name: "श्री. अर्जुन जाधव (आरोग्य निरीक्षक - वाकड)", contact: "9822100047" }
+      WATER_SUPPLY: { name: "Er. निलेश कलाटे (JE Water - वाकड)", contact: "9822100048" }
+      DRAINAGE_DEPT: { name: "Er. महेश कस्पटे (JE Drainage - वाकड)", contact: "9822100049" }
+      ELECTRICAL: { name: "Er. विकास वाकडकर (JE Electrical - वाकड)", contact: "9822100050" }
+
+  30:
+    ward_name_mr: "चिंचवडगाव - केशव नगर"
+    ward_name_en: "Chinchwadgaon - Keshav Nagar"
+    zone: "Zone H"
+    office_address: "प्रभाग ३० कार्यालय, मोरया गोसावी मंदिर परिसर, चिंचवडगाव"
+    ward_officer: "श्री. संभाजी गाडे"
+    ward_officer_contact: "020-27411030"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. योगेश चिंचवडे (JE Civil)", contact: "9822100051" }
+      HEALTH_SWM: { name: "श्री. विष्णू कांबळे (आरोग्य निरीक्षक)", contact: "9822100052" }
+      WATER_SUPPLY: { name: "Er. अनिकेत जोशी (JE Water)", contact: "9822100053" }
+      DRAINAGE_DEPT: { name: "Er. सचिन पाटील (JE Drainage)", contact: "9822100054" }
+      ELECTRICAL: { name: "Er. मंगेश गायकवाड (JE Electrical)", contact: "9822100055" }
+
+  32:
+    ward_name_mr: "रावेत - किवळे"
+    ward_name_en: "Ravet - Kiwale"
+    zone: "Zone H"
+    office_address: "प्रभाग ३२ कार्यालय, डी. वाय. पाटील कॉलेज रोड, रावेत"
+    ward_officer: "श्री. तानाजी भोंडवे"
+    ward_officer_contact: "020-27411032"
+    field_engineers:
+      CIVIL_ROADS: { name: "Er. अमोल भोंडवे (JE Civil)", contact: "9822100056" }
+      HEALTH_SWM: { name: "श्री. भरत शिंदे (आरोग्य निरीक्षक)", contact: "9822100057" }
+      WATER_SUPPLY: { name: "Er. किरण तांबोळी (JE Water)", contact: "9822100058" }
+      DRAINAGE_DEPT: { name: "Er. अक्षय किवळेकर (JE Drainage)", contact: "9822100059" }
+      ELECTRICAL: { name: "Er. तुषार मते (JE Electrical)", contact: "9822100060" }
