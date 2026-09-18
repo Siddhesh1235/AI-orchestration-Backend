@@ -276,6 +276,44 @@
         .badge-red { background: #fee2e2; color: #991b1b; }
         .badge-orange { background: #fef3c7; color: #92400e; }
 
+        .category-badge-pill {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .action-container {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-confirm-ticket {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 3px 8px rgba(2, 132, 199, 0.35);
+            transition: all 0.2s ease;
+        }
+        .btn-confirm-ticket:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 12px rgba(2, 132, 199, 0.45);
+        }
+
         /* Typing Indicator */
         .typing-indicator {
             display: none;
@@ -540,13 +578,15 @@
         <!-- 3. Chat Messages Body -->
         <div class="chat-body" id="chatBody">
             
-            <!-- Default Welcome Bot Message -->
+            <!-- Default Welcome Bot Message (Bilingual) -->
             <div class="message-row bot">
                 <div class="bot-icon-small">🤖</div>
                 <div class="message-bubble bot">
                     <div class="bubble-tag">WARDMITRA AI</div>
                     <div>
-                        Hello adityabhagat4216@gmail.com! 👋 I'm here to help you register your complaint. Please describe the issue you're facing, or upload a photo/video with details about the problem.
+                        <strong>Hello! 👋 Welcome to WardMitra AI (PCMC Sarathi).</strong><br>
+                        I am here to assist you with civic issues such as streetlights, potholes, water supply, garbage, or drainage.<br><br>
+                        <em>(नमस्कार! आपण मराठी किंवा English मध्ये समस्या सांगू शकता. खालील ब्लॉक निवडून किंवा मेसेज टाईप करून सुरुवात करा.)</em>
                     </div>
                     <div class="msg-time" id="welcomeTime">2:39 PM</div>
                 </div>
@@ -561,20 +601,20 @@
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
-                    <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">AI विश्लेषण करत आहे...</span>
+                    <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">AI विचार करत आहे / Thinking...</span>
                 </div>
             </div>
 
         </div>
 
-        <!-- 4. Quick Suggestion Chips -->
+        <!-- 4. Quick Suggestion Chips (Select Category without immediate complaint creation) -->
         <div class="chips-scroll">
-            <span class="quick-chip" onclick="quickFill('वाकड ब्रिजजवळ रस्त्यावर मोठा खड्डा पडला आहे.')">🕳️ Pothole (खड्डा)</span>
-            <span class="quick-chip" onclick="quickFill('थेरगाव मुख्य रस्त्यावर कचराकुंडी भरून दुर्गंधी सुटली आहे.')">🗑️ Garbage (कचरा)</span>
-            <span class="quick-chip" onclick="quickFill('ड्रेनेज लाईन तुंबून रस्त्यावर सांडपाणी वाहत आहे.')">🌊 Drainage (ड्रेनेज)</span>
-            <span class="quick-chip" onclick="quickFill('मुख्य पाईपलाईन फुटल्याने पिण्याचे पाणी वाया जात आहे.')">🚰 Water Leak (पाणी गळती)</span>
-            <span class="quick-chip" onclick="quickFill('गेल्या २ दिवसांपासून रस्त्यावरील स्ट्रीटलाईट बंद आहेत.')">💡 Streetlight (पथदिवा)</span>
-            <span class="quick-chip danger" onclick="quickFill('येथे कचरा साचला आहे आणि महापालिका अधिकारी भिकारचोट आहेत.')">🚫 Profanity Test</span>
+            <span class="quick-chip" onclick="selectCategoryBlock('streetlight', '💡 Streetlight (पथदिवा)')">💡 Streetlight (पथदिवा)</span>
+            <span class="quick-chip" onclick="selectCategoryBlock('pothole', '🕳️ Pothole (खड्डा)')">🕳️ Pothole (खड्डा)</span>
+            <span class="quick-chip" onclick="selectCategoryBlock('garbage', '🗑️ Garbage (कचरा)')">🗑️ Garbage (कचरा)</span>
+            <span class="quick-chip" onclick="selectCategoryBlock('drainage', '🌊 Drainage (ड्रेनेज)')">🌊 Drainage (ड्रेनेज)</span>
+            <span class="quick-chip" onclick="selectCategoryBlock('pipeline_water_leakage', '🚰 Water Leak (पाणी गळती)')">🚰 Water Leak (पाणी गळती)</span>
+            <span class="quick-chip danger" onclick="selectCategoryBlock('profanity_test', '🚫 Profanity Test')">🚫 Profanity Test</span>
         </div>
 
         <!-- 5. Photo Attachment Preview Strip -->
@@ -695,14 +735,48 @@
             }
         }
 
-        function quickFill(text) {
-            document.getElementById('messageInput').value = text;
-            sendMessage();
+        let currentCategoryKey = null;
+        let currentCategoryLabel = null;
+
+        function selectCategoryBlock(catKey, catLabel) {
+            currentCategoryKey = catKey;
+            currentCategoryLabel = catLabel;
+            const currentTime = formatTime();
+            renderUserMessage(catLabel, null, currentTime);
+            showTyping(true);
+
+            const formData = new FormData();
+            formData.append('category', catKey);
+            formData.append('action', 'select_category');
+            formData.append('latitude', defaultLat);
+            formData.append('longitude', defaultLng);
+            formData.append('citizen_phone', citizenEmail);
+
+            fetch('/api/v1/complaints/chat', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                showTyping(false);
+                renderBotCategoryPrompt(data, formatTime());
+            })
+            .catch(err => {
+                showTyping(false);
+                renderBotPlainMessage(`⚠️ Error: ${err.message}`, formatTime());
+            });
+        }
+
+        function confirmRegisterCurrentCategory() {
+            const input = document.getElementById('messageInput');
+            const additionalDesc = input.value.trim();
+            input.value = '';
+            sendMessage(true, additionalDesc);
         }
 
         function handleKeyDown(event) {
             if (event.key === 'Enter') {
-                sendMessage();
+                sendMessage(false);
             }
         }
 
@@ -716,55 +790,78 @@
             return `${hours}:${minutes} ${ampm}`;
         }
 
-        async function sendMessage() {
+        async function sendMessage(forceRegister = false, customText = null) {
             const input = document.getElementById('messageInput');
-            const text = input.value.trim();
+            const text = (customText !== null) ? customText : input.value.trim();
 
-            if (!text && !selectedPhotoFile) {
+            if (!text && !selectedPhotoFile && !currentCategoryKey && !forceRegister) {
                 return;
             }
 
             const currentTime = formatTime();
 
-            // 1. Render User Message Bubble
-            renderUserMessage(text, selectedPhotoFile, currentTime);
+            // Render User Message Bubble
+            if (text || selectedPhotoFile) {
+                renderUserMessage(text || (selectedPhotoFile ? "📷 Photo uploaded" : ""), selectedPhotoFile, currentTime);
+            }
 
-            // Clear input & photo preview
             const currentPhotoFile = selectedPhotoFile;
             input.value = '';
             clearAttachedPhoto();
 
-            // Show Typing Indicator
             showTyping(true);
 
-            // 2. Prepare FormData to call Python AI Orchestrator API
             const formData = new FormData();
-            formData.append('description', text || "Photo Grievance Evidence");
+            if (text) formData.append('message', text);
+            if (currentCategoryKey) formData.append('category', currentCategoryKey);
             formData.append('latitude', defaultLat);
             formData.append('longitude', defaultLng);
             formData.append('citizen_phone', citizenEmail);
+
+            if (forceRegister) {
+                formData.append('confirm_register', 'true');
+                formData.append('action', 'register');
+            }
 
             if (currentPhotoFile) {
                 formData.append('photo', currentPhotoFile);
             }
 
             try {
-                const response = await fetch('/api/v1/complaints/register', {
+                const response = await fetch('/api/v1/complaints/chat', {
                     method: 'POST',
                     body: formData
                 });
                 const data = await response.json();
-
                 showTyping(false);
 
                 if (response.ok) {
-                    renderBotResponse(data, formatTime());
+                    handleBotChatResponse(data, formatTime());
                 } else {
-                    renderBotPlainMessage(`⚠️ त्रुटी आली: ${data.detail || "तक्रार नोंदवण्यात अडचण आली."}`, formatTime());
+                    renderBotPlainMessage(`⚠️ Error: ${data.detail || "Unable to process message."}`, formatTime());
                 }
             } catch (err) {
                 showTyping(false);
-                renderBotPlainMessage(`⚠️ सर्व्हरशी संपर्क होऊ शकला नाही: ${err.message}`, formatTime());
+                renderBotPlainMessage(`⚠️ Network Error: ${err.message}`, formatTime());
+            }
+        }
+
+        function handleBotChatResponse(data, time) {
+            if (data.intent === 'GREETING') {
+                renderBotPlainMessage(data.reply, time);
+            } else if (data.intent === 'CATEGORY_SELECTED') {
+                renderBotCategoryPrompt(data, time);
+            } else if (data.intent === 'COMPLAINT_REGISTERED') {
+                renderBotTicketCard(data, time);
+                currentCategoryKey = null;
+                currentCategoryLabel = null;
+            } else if (data.intent === 'MODERATION_REJECTED') {
+                renderBotRejectedCard(data, time);
+            } else if (data.action_prompt === 'confirm_or_detail') {
+                if (data.category) currentCategoryKey = data.category;
+                renderBotCategoryPrompt(data, time);
+            } else {
+                renderBotPlainMessage(data.reply, time);
             }
         }
 
@@ -803,7 +900,7 @@
                 <div class="bot-icon-small">🤖</div>
                 <div class="message-bubble bot">
                     <div class="bubble-tag">WARDMITRA AI</div>
-                    <div>${msg}</div>
+                    <div style="white-space: pre-line;">${msg}</div>
                     <div class="msg-time">${time}</div>
                 </div>
             `;
@@ -811,87 +908,114 @@
             scrollBottom();
         }
 
-        function renderBotResponse(data, time) {
+        function renderBotCategoryPrompt(data, time) {
             const chatBody = document.getElementById('chatBody');
             const typingRow = document.getElementById('typingRow');
 
-            const isModerationRejected = (data.moderation_status === 'REJECTED');
+            const isMr = (data.language === 'mr');
+            const catBadge = data.category_name || (isMr ? 'नागरी समस्या' : 'Civic Issue');
+            const btnText = isMr ? '🚀 तक्रार नोंदवा (Register Ticket)' : '🚀 Register Complaint Now';
 
             const row = document.createElement('div');
             row.className = 'message-row bot';
-
-            let contentHtml = '';
-
-            if (isModerationRejected) {
-                contentHtml = `
-                    <div style="color: #dc2626; font-weight: 700; margin-bottom: 4px;">🚫 तक्रार नाकारण्यात आली!</div>
-                    <div style="font-size: 0.84rem; color: #475569;">
-                        ${data.message || "आपल्या तक्रारीमध्ये आक्षेपार्ह मजकूर किंवा अयोग्य फोटो आढळल्याने ती प्रणालीद्वारे नाकारण्यात आली आहे."}
-                    </div>
-                    <div class="ticket-card" style="border-color: #fca5a5; background: #fff5f5;">
-                        <div class="ticket-row">
-                            <span>सुरक्षा स्थिती:</span>
-                            <span class="badge-pill badge-red">BLOCKED (आक्षेपार्ह)</span>
-                        </div>
-                        <div class="ticket-row">
-                            <span>कारण:</span>
-                            <span style="color: #b91c1c; font-weight: 600;">${data.fraud_reason || data.moderation_reason || 'Profanity / Abusive Language'}</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                contentHtml = `
-                    <div style="color: #0b3b64; font-weight: 700; margin-bottom: 4px;">🎉 आपली तक्रार यशस्वीरित्या नोंदवली गेली आहे!</div>
-                    <div style="font-size: 0.84rem; color: #475569;">
-                        आपल्या समस्येचे AI ने वर्गीकरण केले असून संबंधित प्रभागातील अभियंत्याकडे काम सोपवण्यात आले आहे.
-                    </div>
-                    <div class="ticket-card">
-                        <div class="ticket-header">
-                            <span>🎫 तिकीट: ${data.ticket_id}</span>
-                            <span class="badge-pill badge-green">नोंदणी पूर्ण</span>
-                        </div>
-                        <div class="ticket-row">
-                            <span>वर्ग / श्रेणी:</span>
-                            <span style="font-weight: 600;">${data.detected_category} (${data.category_name_mr || ''})</span>
-                        </div>
-                        <div class="ticket-row">
-                            <span>विश्वासार्हता:</span>
-                            <span>${(data.confidence * 100).toFixed(1)}% (YOLO11 / NLP)</span>
-                        </div>
-                        <div class="ticket-row">
-                            <span>प्रभाग / Ward:</span>
-                            <span style="font-weight: 600; color: #0b3b64;">Ward ${data.ward || '19A, KDMC'}</span>
-                        </div>
-                        <div class="ticket-row">
-                            <span>नेमलेले कामगार:</span>
-                            <span style="font-weight: 600;">${data.assigned_worker_name || 'क्षेत्रीय अभियंता'}</span>
-                        </div>
-                        <div class="ticket-row">
-                            <span>निकालाची मुदत (SLA):</span>
-                            <span class="badge-pill badge-orange">${data.sla_hours} तास</span>
-                        </div>
-                        <div class="ticket-row">
-                            <span>कंटेंट मॉडरेशन:</span>
-                            <span class="badge-pill badge-green">🛡️ सुरक्षित (Passed)</span>
-                        </div>
-                    </div>
-                    <div style="margin-top: 8px;">
-                        <a href="/static/index.html" style="font-size: 0.78rem; color: #0284c7; text-decoration: none; font-weight: 600;">
-                            🔍 लाईव्ह ट्रॅक करण्यासाठी येथे क्लिक करा →
-                        </a>
-                    </div>
-                `;
-            }
-
             row.innerHTML = `
                 <div class="bot-icon-small">🤖</div>
                 <div class="message-bubble bot">
                     <div class="bubble-tag">WARDMITRA AI</div>
-                    ${contentHtml}
+                    <span class="category-badge-pill">📂 ${catBadge}</span>
+                    <div style="white-space: pre-line; margin-top: 4px;">${data.reply}</div>
+                    <div class="action-container">
+                        <button class="btn-confirm-ticket" onclick="confirmRegisterCurrentCategory()">
+                            ${btnText}
+                        </button>
+                    </div>
                     <div class="msg-time">${time}</div>
                 </div>
             `;
+            chatBody.insertBefore(row, typingRow);
+            scrollBottom();
+        }
 
+        function renderBotTicketCard(data, time) {
+            const chatBody = document.getElementById('chatBody');
+            const typingRow = document.getElementById('typingRow');
+
+            const t = data.ticket_data || {};
+            const isMr = (data.language === 'mr');
+
+            const cardTitle = isMr ? '🎉 आपली तक्रार यशस्वीरित्या नोंदवली गेली आहे!' : '🎉 Your complaint has been successfully registered!';
+            const statusBadge = isMr ? 'नोंदणी पूर्ण' : 'Registered';
+            const catLabel = isMr ? 'वर्ग / श्रेणी:' : 'Category:';
+            const wardLabel = isMr ? 'प्रभाग:' : 'Ward:';
+            const workerLabel = isMr ? 'नेमलेले कामगार:' : 'Assigned Worker:';
+            const slaLabel = isMr ? 'निकालाची मुदत (SLA):' : 'SLA Target:';
+            const hoursSuffix = isMr ? 'तास' : 'Hours';
+            const trackBtnText = isMr ? '🔍 पोर्टलवर ट्रॅक करा →' : '🔍 Track on Portal →';
+
+            const workerName = t.assigned_worker_name || (isMr ? 'Er. संदीप माने' : 'Er. Sandeep Mane');
+            const workerContact = t.assigned_worker_contact ? ` (${t.assigned_worker_contact})` : '';
+
+            const row = document.createElement('div');
+            row.className = 'message-row bot';
+            row.innerHTML = `
+                <div class="bot-icon-small">🤖</div>
+                <div class="message-bubble bot">
+                    <div class="bubble-tag">WARDMITRA AI</div>
+                    <div style="color: #0b3b64; font-weight: 700; margin-bottom: 4px;">${cardTitle}</div>
+                    <div class="ticket-card">
+                        <div class="ticket-header">
+                            <span>🎫 ${t.ticket_id || 'WM-TICKET'}</span>
+                            <span class="badge-pill badge-green">${statusBadge}</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>${catLabel}</span>
+                            <span style="font-weight: 600;">${data.category_name || t.detected_category || 'Civic'}</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>${wardLabel}</span>
+                            <span style="font-weight: 600; color: #0b3b64;">Ward ${t.ward || '19A'}</span>
+                        </div>
+                        <div class="ticket-row" style="background: #e0f2fe; padding: 4px 6px; border-radius: 6px;">
+                            <span style="color: #0369a1; font-weight: 600;">${workerLabel}</span>
+                            <span style="font-weight: 700; color: #0b3b64;">👷 ${workerName}${workerContact}</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>${slaLabel}</span>
+                            <span class="badge-pill badge-orange">${t.sla_hours || 24} ${hoursSuffix}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <a href="/static/index.html" style="font-size: 0.78rem; color: #0284c7; text-decoration: none; font-weight: 600;">
+                            ${trackBtnText}
+                        </a>
+                    </div>
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+            chatBody.insertBefore(row, typingRow);
+            scrollBottom();
+        }
+
+        function renderBotRejectedCard(data, time) {
+            const chatBody = document.getElementById('chatBody');
+            const typingRow = document.getElementById('typingRow');
+
+            const isMr = (data.language === 'mr');
+            const row = document.createElement('div');
+            row.className = 'message-row bot';
+            row.innerHTML = `
+                <div class="bot-icon-small">🤖</div>
+                <div class="message-bubble bot">
+                    <div class="bubble-tag">WARDMITRA AI</div>
+                    <div style="color: #dc2626; font-weight: 700; margin-bottom: 4px;">
+                        ${isMr ? '🚫 तक्रार नाकारण्यात आली!' : '🚫 Complaint Rejected!'}
+                    </div>
+                    <div style="font-size: 0.84rem; color: #475569;">
+                        ${data.reply || (isMr ? "आपल्या तक्रारीत आक्षेपार्ह मजकूर आढळल्याने नाकारण्यात आली." : "Complaint rejected due to policy violations.")}
+                    </div>
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
             chatBody.insertBefore(row, typingRow);
             scrollBottom();
         }

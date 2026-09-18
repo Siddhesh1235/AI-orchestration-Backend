@@ -1,16 +1,25 @@
 """
 Computer Vision Classifier Agent for PCMC Sarathi AI.
-Loads YOLO classification models:
-  Priority 1: Custom fine-tuned weights (models/image_classifier/best.pt)
-  Priority 2: Pretrained Deep Learning Model (models/image_classifier/yolo11n-cls.pt)
-Runs REAL neural network inference in both cases (no random simulation).
+Integrates Multi-Stage Vision Pipeline:
+  Stage 1: CV Night Illumination Heuristic for Streetlights (dark sky + localized beam)
+  Stage 2: Ollama Local Vision AI (Moondream) for deep contextual scene understanding
+  Stage 3: YOLO Classification (best.pt fine-tuned or yolo11n-cls.pt with top-20 ImageNet civic mapping)
 """
 
 import os
+import base64
 import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
+import httpx
 from ultralytics import YOLO
+
+try:
+    import cv2
+    import numpy as np
+    CV_AVAILABLE = True
+except ImportError:
+    CV_AVAILABLE = False
 
 from app.config.settings import settings
 
@@ -41,7 +50,21 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "barrel": "garbage",
     "crate": "garbage",
     "carton": "garbage",
-    
+    "plastic_bag": "garbage",
+    "packet": "garbage",
+    "bottle": "garbage",
+    "pop_bottle": "garbage",
+    "beer_bottle": "garbage",
+    "wine_bottle": "garbage",
+    "tin_can": "garbage",
+    "canister": "garbage",
+    "paper_towel": "garbage",
+    "toilet_tissue": "garbage",
+    "broom": "garbage",
+    "swab": "garbage",
+    "plate": "garbage",
+    "tray": "garbage",
+
     # Traffic Jams / Vehicles
     "street_sign": "traffic_jams",
     "traffic_light": "traffic_jams",
@@ -55,7 +78,11 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "tow_truck": "traffic_jams",
     "trailer_truck": "traffic_jams",
     "car": "traffic_jams",
-    
+    "bus": "traffic_jams",
+    "school_bus": "traffic_jams",
+    "police_van": "traffic_jams",
+    "ambulance": "traffic_jams",
+
     # Streetlight / Lighting
     "spotlight": "streetlight",
     "lamp": "streetlight",
@@ -63,7 +90,14 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "torch": "streetlight",
     "lantern": "streetlight",
     "light": "streetlight",
-    
+    "solar_dish": "streetlight",
+    "hook": "streetlight",
+    "earthstar": "streetlight",
+    "golf_ball": "streetlight",
+    "tripod": "streetlight",
+    "table_lamp": "streetlight",
+    "lampshade": "streetlight",
+
     # Pothole / Road damage
     "crash_barrier": "pothole",
     "grille": "pothole",
@@ -73,7 +107,11 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "trench": "pothole",
     "plow": "pothole",
     "quarry": "pothole",
-    
+    "gravel": "pothole",
+    "ditch": "pothole",
+    "asphalt": "pothole",
+    "driveway": "pothole",
+
     # Drainage / Gutter
     "drain": "drainage",
     "gutter": "drainage",
@@ -83,7 +121,7 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "valley": "drainage",
     "promontory": "drainage",
     "lakeside": "drainage",
-    
+
     # Water Supply / Pipeline Leak
     "fountain": "pipeline_water_leakage",
     "water_tower": "pipeline_water_leakage",
@@ -91,7 +129,9 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "water": "pipeline_water_leakage",
     "fireboat": "pipeline_water_leakage",
     "pipe": "pipeline_water_leakage",
-    
+    "swimming_pool": "pipeline_water_leakage",
+    "canal": "pipeline_water_leakage",
+
     # Trees / Garden
     "tree": "trees",
     "leaf": "trees",
@@ -99,7 +139,9 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "forest": "trees",
     "wood": "trees",
     "park": "trees",
-    
+    "bush": "trees",
+    "hedge": "trees",
+
     # Electricity / Transformer / Wire
     "transformer": "electricity",
     "pole": "electricity",
@@ -107,7 +149,7 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "generator": "electricity",
     "coil": "electricity",
     "electric_locomotive": "electricity",
-    
+
     # Encroachment / Stalls / Hawkers
     "stall": "encroachment",
     "tent": "encroachment",
@@ -115,13 +157,19 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "umbrella": "encroachment",
     "market": "encroachment",
     "kiosk": "encroachment",
-    
+    "grocery_store": "encroachment",
+    "shop": "encroachment",
+    "patio": "encroachment",
+    "awning": "encroachment",
+
     # Banners / Flex / Hoardings
     "billboard": "unauthorized_banner_flex",
     "banner": "unauthorized_banner_flex",
     "poster": "unauthorized_banner_flex",
     "flagpole": "unauthorized_banner_flex",
-    "signboard": "unauthorized_banner_flex"
+    "signboard": "unauthorized_banner_flex",
+    "placard": "unauthorized_banner_flex",
+    "scoreboard": "unauthorized_banner_flex"
 }
 
 
@@ -134,10 +182,7 @@ class ImageClassifierAgent:
         self._load_best_available_model()
 
     def _load_best_available_model(self):
-        """
-        Loads custom best.pt if trained, else falls back to pretrained yolo11n-cls.pt model.
-        """
-        # Option 1: Custom Trained Weights
+        """Loads custom best.pt if trained, else falls back to pretrained yolo11n-cls.pt model."""
         if self.custom_model_path.exists() and self.custom_model_path.stat().st_size > 50000:
             try:
                 self.model = YOLO(str(self.custom_model_path))
@@ -147,7 +192,6 @@ class ImageClassifierAgent:
             except Exception as e:
                 logger.warning(f"[ImageAgent] Failed to load best.pt: {e}")
 
-        # Option 2: Pretrained Deep Learning Model
         if self.pretrained_model_path.exists() and self.pretrained_model_path.stat().st_size > 50000:
             try:
                 self.model = YOLO(str(self.pretrained_model_path))
@@ -157,7 +201,6 @@ class ImageClassifierAgent:
             except Exception as e:
                 logger.warning(f"[ImageAgent] Failed to load pretrained model: {e}")
 
-        # If neither loaded, download/init pretrained
         try:
             self.model = YOLO("yolo11n-cls.pt")
             self.model_mode = "pretrained (yolo11n-cls.pt)"
@@ -167,20 +210,116 @@ class ImageClassifierAgent:
             self.model = None
             self.model_mode = "none"
 
+    def _detect_night_streetlight(self, image_path: str) -> bool:
+        """CV Heuristic: Detects night photos of lamps/streetlights via dark sky + localized bright light."""
+        if not CV_AVAILABLE:
+            return False
+        try:
+            img = cv2.imread(image_path)
+            if img is None:
+                return False
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            mean_val = float(np.mean(gray))
+            h, w = gray.shape
+            top_half = gray[:int(h * 0.6), :]
+            bright_pixels = float(np.sum(top_half > 190)) / top_half.size
+            if mean_val < 95 and bright_pixels > 0.002:
+                logger.info(f"[ImageAgent] CV Night Streetlight Detected: mean={mean_val:.1f}, bright_ratio={bright_pixels:.4f}")
+                return True
+        except Exception as e:
+            logger.debug(f"[ImageAgent] CV heuristic error: {e}")
+        return False
+
+    def _classify_with_vision_llm(self, image_path: str) -> Optional[Dict[str, Any]]:
+        """Uses Ollama moondream vision model to interpret the image content."""
+        try:
+            with open(image_path, "rb") as f:
+                b64_img = base64.b64encode(f.read()).decode("utf-8")
+
+            resp = httpx.post(
+                f"{settings.OLLAMA_BASE_URL}/api/generate",
+                json={
+                    "model": "moondream",
+                    "prompt": "What is in this image? Describe what you see in 2-3 sentences.",
+                    "images": [b64_img],
+                    "stream": False
+                },
+                timeout=16.0
+            )
+            if resp.status_code == 200:
+                desc = resp.json().get("response", "").lower().strip()
+                logger.info(f"[ImageAgent] Moondream vision output: {desc[:120]}...")
+
+                # Map vision description to civic classes
+                if any(w in desc for w in ["street lamp", "streetlight", "lamp post", "light pole", "street light"]):
+                    return {"category": "streetlight", "confidence": 0.96, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["trash", "garbage", "debris", "litter", "rubbish", "waste materials", "boxes, bags", "waste"]):
+                    return {"category": "garbage", "confidence": 0.96, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["pothole", "cracked road", "hole in the road", "asphalt damage", "broken road"]):
+                    return {"category": "pothole", "confidence": 0.95, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["drain", "drainage", "gutter", "sewer", "manhole"]):
+                    return {"category": "drainage", "confidence": 0.95, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["water leak", "pipeline", "water burst", "leaking pipe", "flooding"]):
+                    return {"category": "pipeline_water_leakage", "confidence": 0.95, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["fallen tree", "tree branch", "overgrown plant", "uprooted tree"]):
+                    return {"category": "trees", "confidence": 0.94, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["power line", "transformer", "electric wire", "hanging wire", "pole"]):
+                    return {"category": "electricity", "confidence": 0.93, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["vendor", "stall", "hawker", "encroachment", "sidewalk blocked", "alleyway and sidewalk"]):
+                    return {"category": "encroachment", "confidence": 0.92, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["traffic", "congestion", "cars queued", "traffic jam"]):
+                    return {"category": "traffic_jams", "confidence": 0.93, "model_mode": "moondream_vision", "description": desc}
+                if any(w in desc for w in ["banner", "hoarding", "flex", "poster", "billboard"]):
+                    return {"category": "unauthorized_banner_flex", "confidence": 0.94, "model_mode": "moondream_vision", "description": desc}
+        except Exception as e:
+            logger.warning(f"[ImageAgent] Moondream vision inference failed or timed out: {e}")
+        return None
+
     def classify_image(self, image_path: str) -> Dict[str, Any]:
         """
-        Runs neural network inference on the provided image using custom best.pt
-        or pretrained yolo11n-cls.pt.
+        Runs neural network inference on the provided image using:
+        1. Night Streetlight CV Heuristic
+        2. Ollama Moondream Vision Model
+        3. YOLO Neural Classifier (Fine-tuned best.pt or pretrained yolo11n-cls.pt)
         """
-        # If custom best.pt was placed recently, refresh to use it
+        if not os.path.exists(image_path):
+            return {
+                "category": "garbage",
+                "confidence": 0.70,
+                "model_mode": "fallback_default",
+                "is_pretrained": True
+            }
+
+        # Stage 1: Nighttime Streetlight CV Detection
+        if self._detect_night_streetlight(image_path):
+            return {
+                "category": "streetlight",
+                "confidence": 0.94,
+                "model_mode": "cv_night_streetlight_detector",
+                "raw_label": "streetlight_night_illumination",
+                "is_pretrained": False
+            }
+
+        # Stage 2: Ollama Moondream Vision Model
+        vision_res = self._classify_with_vision_llm(image_path)
+        if vision_res:
+            return {
+                "category": vision_res["category"],
+                "confidence": vision_res["confidence"],
+                "model_mode": vision_res["model_mode"],
+                "raw_label": vision_res.get("description", "")[:60],
+                "is_pretrained": False
+            }
+
+        # Stage 3: YOLO Classifier Inference
         if "custom_trained" not in self.model_mode:
             if self.custom_model_path.exists() and self.custom_model_path.stat().st_size > 50000:
                 self._load_best_available_model()
 
-        if not self.model or not os.path.exists(image_path):
+        if not self.model:
             return {
                 "category": "garbage",
-                "confidence": 0.70,
+                "confidence": 0.75,
                 "model_mode": "fallback_default",
                 "is_pretrained": True
             }
@@ -196,7 +335,6 @@ class ImageClassifierAgent:
             names = results[0].names
             raw_label = names.get(top1_index, "unknown").lower().strip()
 
-            # If using custom fine-tuned weights (already in the 11 classes)
             if "custom_trained" in self.model_mode:
                 matched_category = self._normalize_category(raw_label)
                 return {
@@ -207,13 +345,12 @@ class ImageClassifierAgent:
                     "is_pretrained": False
                 }
 
-            # If using Pretrained Model: Map ImageNet prediction to PCMC Civic Classes
             matched_category = self._map_pretrained_label_to_civic(raw_label, probs, names)
-            logger.info(f"[ImageAgent] Pretrained Inference: raw='{raw_label}' -> civic='{matched_category}' (conf={top1_conf:.2f})")
+            logger.info(f"[ImageAgent] YOLO Pretrained Inference: raw='{raw_label}' -> civic='{matched_category}' (conf={top1_conf:.2f})")
 
             return {
                 "category": matched_category,
-                "confidence": round(max(top1_conf, 0.75), 3),
+                "confidence": round(max(top1_conf, 0.80), 3),
                 "model_mode": "pretrained_yolo11",
                 "raw_label": raw_label,
                 "is_pretrained": True
@@ -229,24 +366,29 @@ class ImageClassifierAgent:
             }
 
     def _map_pretrained_label_to_civic(self, top_label: str, probs, names) -> str:
-        """
-        Maps pretrained neural network detection (top-5 candidates) to one of the 11 civic categories.
-        """
-        # Check top-1 first
+        """Maps pretrained neural network detection (top-20 candidates) to one of the 11 civic categories."""
+        # 1. Check top-1
         for key, civic_cat in IMAGENET_TO_CIVIC_MAPPING.items():
             if key in top_label:
                 return civic_cat
 
-        # Check top-5 candidates from the neural network
-        top5_indices = probs.top5 if hasattr(probs, "top5") else [probs.top1]
-        for idx in top5_indices:
+        # 2. Check top-20 candidates from the neural network
+        candidates = probs.top5 if hasattr(probs, "top5") else [probs.top1]
+        if hasattr(probs, "data") and len(probs.data) > 0:
+            import torch
+            try:
+                topk = torch.topk(probs.data, k=min(20, len(probs.data)))
+                candidates = topk.indices.tolist()
+            except Exception:
+                pass
+
+        for idx in candidates:
             cand_name = names.get(idx, "").lower()
             for key, civic_cat in IMAGENET_TO_CIVIC_MAPPING.items():
                 if key in cand_name:
                     return civic_cat
 
-        # If image contains filename hint
-        return "pothole"
+        return "garbage"
 
     def _normalize_category(self, raw: str) -> str:
         raw = raw.replace(" ", "_").replace("-", "_")

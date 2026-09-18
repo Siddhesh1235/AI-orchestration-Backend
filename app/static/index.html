@@ -874,13 +874,15 @@
             <!-- TAB 2: AI CHAT (Screenshot 1) -->
             <div id="tabChatView">
                 <div class="chat-scroll-area" id="chatScrollArea">
-                    <!-- Default Bot Welcome Message -->
+                    <!-- Default Bot Welcome Message (Bilingual) -->
                     <div class="msg-row bot">
                         <div class="bot-circle-icon">🤖</div>
                         <div class="bubble bot">
                             <div class="bubble-label">WARDMITRA AI</div>
                             <div>
-                                Hello adityabhagat4216@gmail.com! 👋 I'm here to help you register your complaint. Please describe the issue you're facing, or upload a photo/video with details about the problem.
+                                <strong>Hello! 👋 Welcome to WardMitra AI / PCMC Sarathi.</strong><br>
+                                I am here to help you report or track civic grievances like streetlights, potholes, water leaks, or garbage in your area.<br><br>
+                                <em>(नमस्कार! आपण मराठी किंवा English मध्ये समस्या सांगू शकता. खालील ब्लॉक निवडून किंवा मेसेज टाईप करून सुरुवात करा.)</em>
                             </div>
                             <div class="bubble-time" id="chatInitialTime">2:39 PM</div>
                         </div>
@@ -893,19 +895,19 @@
                             <div class="dot"></div>
                             <div class="dot"></div>
                             <div class="dot"></div>
-                            <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">AI विचार करत आहे...</span>
+                            <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">AI विचार करत आहे / Thinking...</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Quick Chips -->
+                <!-- Quick Chips (Select Category without immediate complaint creation) -->
                 <div class="chat-chips">
-                    <span class="chip-btn" onclick="sendQuickMessage('वाकड ब्रिजजवळ रस्त्यावर मोठा खड्डा पडला आहे.')">🕳️ Pothole (खड्डा)</span>
-                    <span class="chip-btn" onclick="sendQuickMessage('थेरगाव मुख्य रस्त्यावर कचराकुंडी भरून दुर्गंधी सुटली आहे.')">🗑️ Garbage (कचरा)</span>
-                    <span class="chip-btn" onclick="sendQuickMessage('ड्रेनेज लाईन तुंबून रस्त्यावर सांडपाणी वाहत आहे.')">🌊 Drainage (ड्रेनेज)</span>
-                    <span class="chip-btn" onclick="sendQuickMessage('मुख्य पाईपलाईन फुटल्याने पिण्याचे पाणी वाया जात आहे.')">🚰 Water Leak</span>
-                    <span class="chip-btn" onclick="sendQuickMessage('गेल्या २ दिवसांपासून रस्त्यावरील पथदिवे बंद आहेत.')">💡 Streetlight</span>
-                    <span class="chip-btn danger" onclick="sendQuickMessage('येथे कचरा साचला आहे आणि महापालिका अधिकारी भिकारचोट आहेत.')">🚫 Profanity Test</span>
+                    <span class="chip-btn" onclick="selectIndexCategory('streetlight', '💡 Streetlight (पथदिवा)')">💡 Streetlight (पथदिवा)</span>
+                    <span class="chip-btn" onclick="selectIndexCategory('pothole', '🕳️ Pothole (खड्डा)')">🕳️ Pothole (खड्डा)</span>
+                    <span class="chip-btn" onclick="selectIndexCategory('garbage', '🗑️ Garbage (कचरा)')">🗑️ Garbage (कचरा)</span>
+                    <span class="chip-btn" onclick="selectIndexCategory('drainage', '🌊 Drainage (ड्रेनेज)')">🌊 Drainage (ड्रेनेज)</span>
+                    <span class="chip-btn" onclick="selectIndexCategory('pipeline_water_leakage', '🚰 Water Leak (पाणी गळती)')">🚰 Water Leak</span>
+                    <span class="chip-btn danger" onclick="selectIndexCategory('profanity_test', '🚫 Profanity Test')">🚫 Profanity Test</span>
                 </div>
 
                 <!-- Photo Preview Strip -->
@@ -1003,11 +1005,11 @@
                             <div class="card-ticket-row"><span>मॉडरेशन तपासणी:</span><span class="chip-badge chip-green" id="tktModBadge">सुरक्षित</span></div>
                         </div>
 
-                        <!-- 3 Level Escalation Chain -->
-                        <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: 10px; padding: 10px; font-size: 0.8rem;">
-                            <div style="font-weight: 700; color: var(--primary-navy); margin-bottom: 6px;">🏛️ ३-स्तरीय एस्केलेशन साखळी:</div>
-                            <div id="tktEscalationChain" style="display: flex; flex-direction: column; gap: 4px; color: #334155;">
-                                <!-- Dynamic items -->
+                        <!-- Single Assigned Worker Box -->
+                        <div style="background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px; padding: 10px; font-size: 0.82rem;">
+                            <div style="font-weight: 700; color: var(--primary-navy); margin-bottom: 4px;">👷 नियुक्त क्षेत्रीय कामगार (Assigned Worker):</div>
+                            <div id="tktEscalationChain" style="color: #0369a1; font-weight: 600;">
+                                <!-- Dynamic worker -->
                             </div>
                         </div>
                     </div>
@@ -1233,9 +1235,43 @@
             }
         }
 
-        function sendQuickMessage(text) {
-            document.getElementById('chatInputText').value = text;
-            executeChatSend();
+        let indexCategoryKey = null;
+        let indexCategoryLabel = null;
+
+        function selectIndexCategory(catKey, catLabel) {
+            indexCategoryKey = catKey;
+            indexCategoryLabel = catLabel;
+            const timeStr = getFormattedTime();
+            renderUserBubble(catLabel, null, timeStr);
+            toggleChatTyping(true);
+
+            const formData = new FormData();
+            formData.append('category', catKey);
+            formData.append('action', 'select_category');
+            formData.append('latitude', currentLat);
+            formData.append('longitude', currentLng);
+            formData.append('citizen_phone', userEmail);
+
+            fetch('/api/v1/complaints/chat', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                toggleChatTyping(false);
+                renderIndexBotCategoryPrompt(data, getFormattedTime());
+            })
+            .catch(err => {
+                toggleChatTyping(false);
+                renderBotPlainBubble(`⚠️ Error: ${err.message}`, getFormattedTime());
+            });
+        }
+
+        function confirmRegisterIndexCategory() {
+            const input = document.getElementById('chatInputText');
+            const addDesc = input.value.trim();
+            input.value = '';
+            executeChatSend(true, addDesc);
         }
 
         function getFormattedTime() {
@@ -1247,37 +1283,42 @@
             return `${h}:${m} ${ampm}`;
         }
 
-        async function executeChatSend() {
+        async function executeChatSend(forceRegister = false, customText = null) {
             const input = document.getElementById('chatInputText');
-            const text = input.value.trim();
+            const text = (customText !== null) ? customText : input.value.trim();
 
-            if (!text && !chatPhotoFile) return;
+            if (!text && !chatPhotoFile && !indexCategoryKey && !forceRegister) return;
 
             const timeStr = getFormattedTime();
 
-            // Render User Bubble
-            renderUserBubble(text, chatPhotoFile, timeStr);
+            if (text || chatPhotoFile) {
+                renderUserBubble(text || (chatPhotoFile ? "📷 Photo evidence" : ""), chatPhotoFile, timeStr);
+            }
 
             const fileToSend = chatPhotoFile;
             input.value = '';
             clearChatPhoto();
 
-            // Show Typing Indicator
             toggleChatTyping(true);
 
-            // Call Backend API
             const formData = new FormData();
-            formData.append('description', text || "Photo evidence complaint");
+            if (text) formData.append('message', text);
+            if (indexCategoryKey) formData.append('category', indexCategoryKey);
             formData.append('latitude', currentLat);
             formData.append('longitude', currentLng);
             formData.append('citizen_phone', userEmail);
+
+            if (forceRegister) {
+                formData.append('confirm_register', 'true');
+                formData.append('action', 'register');
+            }
 
             if (fileToSend) {
                 formData.append('photo', fileToSend);
             }
 
             try {
-                const res = await fetch('/api/v1/complaints/register', {
+                const res = await fetch('/api/v1/complaints/chat', {
                     method: 'POST',
                     body: formData
                 });
@@ -1285,7 +1326,22 @@
                 toggleChatTyping(false);
 
                 if (res.ok) {
-                    renderBotTicketCard(data, getFormattedTime());
+                    if (data.intent === 'GREETING') {
+                        renderBotPlainBubble(data.reply, getFormattedTime());
+                    } else if (data.intent === 'CATEGORY_SELECTED') {
+                        renderIndexBotCategoryPrompt(data, getFormattedTime());
+                    } else if (data.intent === 'COMPLAINT_REGISTERED') {
+                        renderBotTicketCard(data, getFormattedTime());
+                        indexCategoryKey = null;
+                        indexCategoryLabel = null;
+                    } else if (data.intent === 'MODERATION_REJECTED') {
+                        renderBotPlainBubble(data.reply, getFormattedTime());
+                    } else if (data.action_prompt === 'confirm_or_detail') {
+                        if (data.category) indexCategoryKey = data.category;
+                        renderIndexBotCategoryPrompt(data, getFormattedTime());
+                    } else {
+                        renderBotPlainBubble(data.reply, getFormattedTime());
+                    }
                 } else {
                     renderBotPlainBubble(`⚠️ त्रुटी आली: ${data.detail || "तक्रार नोंदवण्यात अडचण आली."}`, getFormattedTime());
                 }
@@ -1329,7 +1385,37 @@
                 <div class="bot-circle-icon">🤖</div>
                 <div class="bubble bot">
                     <div class="bubble-label">WARDMITRA AI</div>
-                    <div>${msg}</div>
+                    <div style="white-space: pre-line;">${msg}</div>
+                    <div class="bubble-time">${time}</div>
+                </div>
+            `;
+            container.insertBefore(row, typingRow);
+            scrollChatToBottom();
+        }
+
+        function renderIndexBotCategoryPrompt(data, time) {
+            const container = document.getElementById('chatScrollArea');
+            const typingRow = document.getElementById('chatTypingRow');
+
+            const isMr = (data.language === 'mr');
+            const catBadge = data.category_name || (isMr ? 'नागरी समस्या' : 'Civic Issue');
+            const btnText = isMr ? '🚀 तक्रार नोंदवा (Register Ticket)' : '🚀 Register Complaint Now';
+
+            const row = document.createElement('div');
+            row.className = 'msg-row bot';
+            row.innerHTML = `
+                <div class="bot-circle-icon">🤖</div>
+                <div class="bubble bot">
+                    <div class="bubble-label">WARDMITRA AI</div>
+                    <div style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 0.72rem; display: inline-block; margin-bottom: 4px;">
+                        📂 ${catBadge}
+                    </div>
+                    <div style="white-space: pre-line; margin-top: 4px;">${data.reply}</div>
+                    <div style="margin-top: 8px;">
+                        <button onclick="confirmRegisterIndexCategory()" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.78rem; cursor: pointer;">
+                            ${btnText}
+                        </button>
+                    </div>
                     <div class="bubble-time">${time}</div>
                 </div>
             `;
@@ -1341,54 +1427,46 @@
             const container = document.getElementById('chatScrollArea');
             const typingRow = document.getElementById('chatTypingRow');
 
-            const isRejected = (data.moderation_status === 'REJECTED');
+            const t = data.ticket_data || {};
+            const isMr = (data.language === 'mr');
+
+            const cardTitle = isMr ? '🎉 आपली तक्रार नोंदवली गेली आहे!' : '🎉 Your complaint has been successfully registered!';
+            const statusBadge = isMr ? 'नोंदणीकृत' : 'Registered';
+            const catLabel = isMr ? 'प्रकार / Category:' : 'Category:';
+            const wardLabel = isMr ? 'प्रभाग / Ward:' : 'Ward:';
+            const workerLabel = isMr ? 'नेमलेले कामगार:' : 'Assigned Worker:';
+            const slaLabel = isMr ? 'SLA मुदत:' : 'SLA Target:';
+            const hoursSuffix = isMr ? 'तास' : 'Hours';
+            const trackBtnText = isMr ? '🔍 ही तक्रार ट्रॅक करा →' : '🔍 Track Complaint →';
+
+            const workerName = t.assigned_worker_name || (isMr ? 'Er. संदीप माने' : 'Er. Sandeep Mane');
+            const workerContact = t.assigned_worker_contact ? ` (${t.assigned_worker_contact})` : '';
+
             const row = document.createElement('div');
             row.className = 'msg-row bot';
-
-            let cardContent = '';
-
-            if (isRejected) {
-                cardContent = `
-                    <div style="color: #dc2626; font-weight: 700; margin-bottom: 4px;">🚫 तक्रार नाकारण्यात आली!</div>
-                    <div style="font-size: 0.84rem; color: #475569;">
-                        ${data.message || "आपल्या तक्रारीमध्ये आक्षेपार्ह मजकूर किंवा अयोग्य फोटो आढळल्याने ती प्रणालीद्वारे नाकारण्यात आली आहे."}
-                    </div>
-                    <div class="card-ticket" style="border-color: #fca5a5; background: #fff5f5;">
-                        <div class="card-ticket-row"><span>स्थिती:</span><span class="chip-badge chip-red">BLOCKED (आक्षेपार्ह)</span></div>
-                        <div class="card-ticket-row"><span>कारण:</span><span style="color: #b91c1c; font-weight: 600;">${data.fraud_reason || data.moderation_reason || 'Profanity violation'}</span></div>
-                    </div>
-                `;
-            } else {
-                cardContent = `
-                    <div style="color: var(--primary-navy); font-weight: 700; margin-bottom: 4px;">🎉 आपली तक्रार नोंदवली गेली आहे!</div>
-                    <div style="font-size: 0.84rem; color: #475569;">
-                        AI ने तक्रारीचे वर्गीकरण केले असून संबंधित प्रभागातील अभियंत्याकडे वर्ग करण्यात आली आहे.
-                    </div>
-                    <div class="card-ticket">
-                        <div class="card-ticket-header">
-                            <span>🎫 तिकीट: ${data.ticket_id}</span>
-                            <span class="chip-badge chip-green">नोंदणीकृत</span>
-                        </div>
-                        <div class="card-ticket-row"><span>प्रकार:</span><span style="font-weight: 600;">${data.detected_category} (${data.category_name_mr || ''})</span></div>
-                        <div class="card-ticket-row"><span>विश्वासार्हता:</span><span>${(data.confidence * 100).toFixed(1)}% (YOLO11 / NLP)</span></div>
-                        <div class="card-ticket-row"><span>प्रभाग:</span><span style="font-weight:600; color:var(--primary-navy);">Ward ${data.ward || '19A, KDMC'}</span></div>
-                        <div class="card-ticket-row"><span>कामगार:</span><span style="font-weight:600;">${data.assigned_worker_name || 'क्षेत्रीय अभियंता'}</span></div>
-                        <div class="card-ticket-row"><span>SLA वेळ:</span><span class="chip-badge chip-orange">${data.sla_hours} तास</span></div>
-                        <div class="card-ticket-row"><span>मॉडरेशन:</span><span class="chip-badge chip-green">🛡️ सुरक्षित (Passed)</span></div>
-                    </div>
-                    <div style="margin-top: 8px;">
-                        <button onclick="document.getElementById('trackInput').value='${data.ticket_id}'; switchMobileTab('complaints'); searchTicketStatus();" style="background: none; border: none; color: #0284c7; font-weight: 700; cursor: pointer; font-size: 0.8rem;">
-                            🔍 ही तक्रार ट्रॅक करा →
-                        </button>
-                    </div>
-                `;
-            }
-
             row.innerHTML = `
                 <div class="bot-circle-icon">🤖</div>
                 <div class="bubble bot">
                     <div class="bubble-label">WARDMITRA AI</div>
-                    ${cardContent}
+                    <div style="color: var(--primary-navy); font-weight: 700; margin-bottom: 4px;">${cardTitle}</div>
+                    <div class="card-ticket">
+                        <div class="card-ticket-header">
+                            <span>🎫 तिकीट: ${t.ticket_id || 'WM-TICKET'}</span>
+                            <span class="chip-badge chip-green">${statusBadge}</span>
+                        </div>
+                        <div class="card-ticket-row"><span>${catLabel}</span><span style="font-weight: 600;">${data.category_name || t.detected_category || 'Civic'}</span></div>
+                        <div class="card-ticket-row"><span>${wardLabel}</span><span style="font-weight:600; color:var(--primary-navy);">Ward ${t.ward || '19A'}</span></div>
+                        <div class="card-ticket-row" style="background: #e0f2fe; padding: 4px 6px; border-radius: 6px;">
+                            <span style="color: #0369a1; font-weight: 600;">${workerLabel}</span>
+                            <span style="font-weight:700; color:var(--primary-navy);">👷 ${workerName}${workerContact}</span>
+                        </div>
+                        <div class="card-ticket-row"><span>${slaLabel}</span><span class="chip-badge chip-orange">${t.sla_hours || 24} ${hoursSuffix}</span></div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <button onclick="document.getElementById('trackInput').value='${t.ticket_id}'; switchMobileTab('complaints'); searchTicketStatus();" style="background: none; border: none; color: #0284c7; font-weight: 700; cursor: pointer; font-size: 0.8rem;">
+                            ${trackBtnText}
+                        </button>
+                    </div>
                     <div class="bubble-time">${time}</div>
                 </div>
             `;
@@ -1497,13 +1575,15 @@
                         modBadge.innerText = 'सुरक्षित (Passed)';
                     }
 
-                    // Render Escalation chain
+                    // Render Single Assigned Worker
                     const chainBox = document.getElementById('tktEscalationChain');
-                    chainBox.innerHTML = `
-                        <div>👷 <strong>Level 1 (कामगार):</strong> ${data.assigned_worker_name || 'Er. संदीप माने'} (${data.assigned_worker_contact || ''})</div>
-                        <div>👔 <strong>Level 2 (पर्यवेक्षक):</strong> ${data.supervisor_name || 'श्री. राजेंद्र माने'} (${data.supervisor_contact || ''})</div>
-                        <div>🏛️ <strong>Level 3 (विभागप्रमुख):</strong> ${data.hod_name || 'मुख्य अभियंता'} (${data.hod_contact || ''})</div>
-                    `;
+                    if (chainBox) {
+                        chainBox.innerHTML = `
+                            <div style="font-size: 0.86rem; color: #0369a1;">
+                                👷 <strong>${data.assigned_worker_name || 'Er. संदीप माने'}</strong> (${data.assigned_worker_contact || '020-67333333'})
+                            </div>
+                        `;
+                    }
                 } else {
                     alert("तिकीट आढळले नाही: " + (data.detail || "कृपया अचूक क्रमांक तपासा."));
                 }

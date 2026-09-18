@@ -49,6 +49,21 @@ class FraudAgent:
                 "category": "GIBBERISH"
             }
 
+        # 1.5. Check for greetings mistakenly submitted as complaints
+        greeting_patterns = [
+            r"^(h+[i|y]+|h+e+l+o+|h+e+y+|h+l+o+|g+m+|g+n+|good\s*morning|good\s*afternoon|good\s*evening)[\s!\.]*$",
+            r"^(नमस्कार|रामराम|शुभ\s*सकाळ|शुभ\s*दुपार|शुभ\s*संध्याकाळ|प्रणाम|जय\s*महाराष्ट्र)[\s!\.]*$",
+            r"^(namaskar|namaste|radhe\s*radhe|kasa\s*ahes|kashi\s*ahes|how\s*are\s*you)[\s!\.]*$"
+        ]
+        for gp in greeting_patterns:
+            if re.match(gp, text):
+                logger.warning(f"[FraudAgent] Greeting submitted as complaint: '{text}'")
+                return {
+                    "is_fraud": True,
+                    "reason": "केवळ अभिवादन मजकूर (Greeting text cannot be registered as a complaint ticket)",
+                    "category": "GREETING_ONLY"
+                }
+
         # 2. Check for exact spam words
         words = text.split()
         if len(words) == 1 and words[0] in SPAM_EXACT_WORDS:

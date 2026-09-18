@@ -28,14 +28,58 @@ from app.schemas.complaint import (
 from app.orchestrator.orchestrator import orchestrator
 from app.services.notification_service import notification_service
 from app.services.ward_service import ward_service
+from app.services.conversational_service import conversational_service
 from app.config.settings import settings
 
 router = APIRouter(prefix="/complaints", tags=["Grievance Redressal"])
 
 
+@router.post("/chat")
+async def chat_with_bot(
+    message: Optional[str] = Form(None, description="User chat text"),
+    category: Optional[str] = Form(None, description="Selected category key"),
+    latitude: Optional[float] = Form(None, description="GPS Latitude"),
+    longitude: Optional[float] = Form(None, description="GPS Longitude"),
+    citizen_phone: Optional[str] = Form("9876543210", description="Citizen Phone"),
+    photo: Optional[UploadFile] = File(None, description="Evidence image"),
+    confirm_register: bool = Form(False, description="Confirm grievance registration"),
+    action: Optional[str] = Form(None, description="Action code: chat, select_category, register"),
+    db: Session = Depends(get_db)
+):
+    """
+    Interactive Multilingual (Marathi & English) Chatbot Endpoint:
+    - Answers greetings without creating complaints.
+    - Matches user language (English -> English, Marathi -> Marathi).
+    - Acknowledges category clicks (e.g. Streetlight) without auto-submitting.
+    - Confirms registration before saving ticket.
+    - Returns single assigned worker attribution.
+    """
+    photo_filename = None
+    photo_bytes = None
+
+    if photo and photo.filename:
+        photo_filename = photo.filename
+        photo_bytes = await photo.read()
+
+    result = conversational_service.handle_chat(
+        db=db,
+        message=message,
+        category=category,
+        latitude=latitude,
+        longitude=longitude,
+        citizen_phone=citizen_phone,
+        photo_filename=photo_filename,
+        photo_bytes=photo_bytes,
+        confirm_register=confirm_register,
+        action=action
+    )
+
+    return result
+
+
 @router.post("/register", response_model=ComplaintRegisterResponse, status_code=status.HTTP_201_CREATED)
 async def register_complaint(
-    description: str = Form(..., description="तक्रारीचे वर्णन (Marathi/Hindi/English)"),
+    description: Optional[str] = Form(None, description="तक्रारीचे वर्णन (Marathi/English) - ऐच्छिक"),
     latitude: Optional[float] = Form(None, description="GPS Latitude"),
     longitude: Optional[float] = Form(None, description="GPS Longitude"),
     citizen_phone: Optional[str] = Form("9876543210", description="नागरिकाचा मोबाईल क्रमांक"),
@@ -45,8 +89,7 @@ async def register_complaint(
 ):
     """
     3.4.2.1: Register Complaint via Text, Location, and Photo/Video.
-    Executes AI Auto-Categorization across 11 Civic Classes, Priority Grading,
-    and assigns directly to the Level 1 Ward Field Worker.
+    Description is optional; if omitted, a default grievance summary is used.
     """
     photo_filename = None
     photo_bytes = None
@@ -55,9 +98,17 @@ async def register_complaint(
         photo_filename = photo.filename
         photo_bytes = await photo.read()
 
+    if description and conversational_service.is_greeting(description) and not photo_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="केवळ अभिवादनावरून तक्रार नोंदवता येत नाही. कृपया समस्येचे वर्णन द्या. (Greetings cannot be registered as complaints. Please describe your civic grievance.)"
+        )
+
+    clean_description = (description or "").strip() or "नागरी समस्या तक्रार (Civic Grievance)"
+
     result = orchestrator.process_registration(
         db=db,
-        description=description,
+        description=clean_description,
         latitude=latitude,
         longitude=longitude,
         citizen_phone=citizen_phone,

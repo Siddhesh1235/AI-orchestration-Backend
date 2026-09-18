@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # Tier 2: Free Local Ollama Provider (Primary)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.2"
-    OLLAMA_TIMEOUT_SECONDS: float = 8.0
+    OLLAMA_TIMEOUT_SECONDS: float = 35.0
 
     # Tier 3: OpenAI Fallback (Secondary, Emergency Only)
     OPENAI_API_KEY: Optional[str] = None

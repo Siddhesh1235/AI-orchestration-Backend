@@ -49,6 +49,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Middleware to prevent browser caching of static files (ensures fresh JS/CSS)
+@app.middleware("http")
+async def add_no_cache_headers(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/static"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 # 4. Mount Uploads and Static Directories
 static_dir = Path(__file__).parent / "static"
 static_dir.mkdir(parents=True, exist_ok=True)
@@ -63,11 +73,11 @@ app.include_router(complaint.router, prefix="/api/v1")
 app.include_router(health.router, prefix="/api/v1")
 
 
-# 6. Root Route -> Redirect to Interactive Testing Portal
+# 6. Root Route -> Redirect to Citizen Mobile Chatbot UI
 @app.get("/", include_in_schema=False)
 def root_redirect():
-    """Redirects default root URL directly to the Testing Portal UI."""
-    return RedirectResponse(url="/static/index.html")
+    """Redirects default root URL directly to the Citizen Mobile Chatbot UI."""
+    return RedirectResponse(url="/static/chat.html")
 
 
 @app.get("/chat", include_in_schema=False)

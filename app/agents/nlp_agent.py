@@ -70,6 +70,10 @@ class NLPAgent:
         }
 
     def _detect_intent(self, text: str) -> str:
+        # Check greetings
+        clean = text.strip().lower()
+        if clean in ["hi", "hello", "hey", "gm", "good morning", "good afternoon", "good evening", "नमस्कार", "रामराम", "namaskar", "namaste"]:
+            return "GREETING"
         if any(w in text for w in ["track", "status", "तपासा", "स्थिती", "ticket", "तिकीट"]):
             return "TRACK_COMPLAINT"
         if any(w in text for w in ["feedback", "rating", "अभिप्राय", "स्टार"]):
