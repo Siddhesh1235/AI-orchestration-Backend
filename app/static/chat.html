@@ -532,8 +532,173 @@
         .portal-switch:hover {
             background: #475569;
         }
-        @media (max-width: 480px) {
-            .portal-switch { display: none; }
+        /* Screen container styles */
+        .app-screen {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Form & Registration Styles */
+        .form-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .form-input-text {
+            width: 100%;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 0.86rem;
+            outline: none;
+            color: #0f172a;
+            font-family: inherit;
+        }
+        .form-input-text:focus {
+            border-color: #0b3b64;
+            background: #ffffff;
+        }
+        .upload-dropzone {
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8fafc;
+            transition: all 0.2s;
+        }
+        .upload-dropzone:hover {
+            border-color: #0b3b64;
+            background: #f0f4f8;
+        }
+        .btn-submit-full {
+            width: 100%;
+            padding: 13px;
+            background: #0b3b64;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(11, 59, 100, 0.25);
+            transition: transform 0.1s, background 0.2s;
+        }
+        .btn-submit-full:hover {
+            background: #072a48;
+        }
+        .btn-submit-full:active {
+            transform: scale(0.98);
+        }
+        .circle-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: #0b3b64;
+            color: #ffffff;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* Live Timeline CSS */
+        .track-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+            padding-left: 6px;
+            margin-top: 6px;
+        }
+        .timeline-item {
+            display: flex;
+            gap: 12px;
+            position: relative;
+            padding-bottom: 18px;
+        }
+        .timeline-item:last-child {
+            padding-bottom: 4px;
+        }
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .timeline-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            z-index: 2;
+        }
+        .timeline-dot.completed {
+            background: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        .timeline-dot.active {
+            background: #0284c7;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.25);
+            animation: pulseDot 1.5s infinite;
+        }
+        @keyframes pulseDot {
+            0% { box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.1); }
+            100% { box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.4); }
+        }
+        .timeline-connector {
+            width: 2px;
+            background: #e2e8f0;
+            flex: 1;
+            margin-top: 3px;
+            margin-bottom: 3px;
+        }
+        .timeline-connector.completed {
+            background: #10b981;
+        }
+        .timeline-content {
+            flex: 1;
+        }
+        .timeline-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .timeline-desc {
+            font-size: 0.74rem;
+            color: #64748b;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+        .timeline-time {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            margin-top: 2px;
         }
     </style>
 </head>
@@ -555,104 +720,237 @@
             </div>
         </div>
 
-        <!-- 2. Top App Bar -->
+        <!-- 2. Top App Bar (Dynamic per screen) -->
         <div class="chat-header">
             <div class="header-left">
-                <button class="back-btn" onclick="window.location.href='/static/index.html'" title="Back to Portal">
+                <button class="back-btn" id="topBackBtn" onclick="handleHeaderBack()" title="Back" style="display: none;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 </button>
-                <div class="robot-avatar">
+                <div class="robot-avatar" id="headerAvatar">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
                 </div>
                 <div class="header-info">
-                    <h2>WardMitra AI</h2>
-                    <p>Marathi NLP · Ward 19A, KDMC</p>
+                    <h2 id="headerTitle">WardMitra AI</h2>
+                    <p id="headerSubtitle">Marathi NLP · Ward 19A, KDMC</p>
                 </div>
             </div>
-            <div class="online-pill">
+            <div class="online-pill" id="headerOnlinePill">
                 <div class="online-dot"></div>
-                Online
+                <span id="headerPillText">Online</span>
             </div>
         </div>
 
-        <!-- 3. Chat Messages Body -->
-        <div class="chat-body" id="chatBody">
-            
-            <!-- Default Welcome Bot Message (Bilingual) -->
-            <div class="message-row bot">
-                <div class="bot-icon-small">🤖</div>
-                <div class="message-bubble bot">
-                    <div class="bubble-tag">WARDMITRA AI</div>
-                    <div>
-                        <strong>Hello! 👋 Welcome to WardMitra AI (PCMC Sarathi).</strong><br>
-                        I am here to assist you with civic issues such as streetlights, potholes, water supply, garbage, or drainage.<br><br>
-                        <em>(नमस्कार! आपण मराठी किंवा English मध्ये समस्या सांगू शकता. खालील ब्लॉक निवडून किंवा मेसेज टाईप करून सुरुवात करा.)</em>
+        <!-- SCREEN 1: AI CHATBOT VIEW (Default) -->
+        <div id="chatScreen" class="app-screen">
+            <!-- 3. Chat Messages Body -->
+            <div class="chat-body" id="chatBody">
+                <!-- Default Welcome Bot Message (Bilingual) -->
+                <div class="message-row bot">
+                    <div class="bot-icon-small">🤖</div>
+                    <div class="message-bubble bot">
+                        <div class="bubble-tag">WARDMITRA AI</div>
+                        <div>
+                            <strong>Hello! 👋 Welcome to WardMitra AI (PCMC Sarathi).</strong><br>
+                            I am here to assist you with civic issues such as streetlights, potholes, water supply, garbage, or drainage.<br><br>
+                            <em>(नमस्कार! आपण मराठी किंवा English मध्ये समस्या सांगू शकता. खालील ब्लॉक निवडून किंवा मेसेज टाईप करून सुरुवात करा.)</em>
+                        </div>
+                        <div class="msg-time" id="welcomeTime">2:39 PM</div>
                     </div>
-                    <div class="msg-time" id="welcomeTime">2:39 PM</div>
+                </div>
+
+                <!-- Typing indicator -->
+                <div class="message-row bot" id="typingRow" style="display: none;">
+                    <div class="bot-icon-small">🤖</div>
+                    <div class="typing-indicator" id="typingIndicator" style="display: flex;">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">AI विचार करत आहे / Thinking...</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Dynamic Messages will be injected here -->
+            <!-- 4. Quick Suggestion Chips -->
+            <div class="chips-scroll">
+                <span class="quick-chip" onclick="selectCategoryBlock('streetlight', '💡 Streetlight (पथदिवा)')">💡 Streetlight (पथदिवा)</span>
+                <span class="quick-chip" onclick="selectCategoryBlock('pothole', '🕳️ Pothole (खड्डा)')">🕳️ Pothole (खड्डा)</span>
+                <span class="quick-chip" onclick="selectCategoryBlock('garbage', '🗑️ Garbage (कचरा)')">🗑️ Garbage (कचरा)</span>
+                <span class="quick-chip" onclick="selectCategoryBlock('drainage', '🌊 Drainage (ड्रेनेज)')">🌊 Drainage (ड्रेनेज)</span>
+                <span class="quick-chip" onclick="selectCategoryBlock('pipeline_water_leakage', '🚰 Water Leak (पाणी गळती)')">🚰 Water Leak (पाणी गळती)</span>
+                <span class="quick-chip danger" onclick="selectCategoryBlock('profanity_test', '🚫 Profanity Test')">🚫 Profanity Test</span>
+            </div>
 
-            <!-- Typing indicator -->
-            <div class="message-row bot" id="typingRow" style="display: none;">
-                <div class="bot-icon-small">🤖</div>
-                <div class="typing-indicator" id="typingIndicator" style="display: flex;">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;">AI विचार करत आहे / Thinking...</span>
+            <!-- 5. Photo Attachment Preview Strip -->
+            <div class="preview-strip" id="previewStrip">
+                <div class="preview-thumb">
+                    <img id="thumbImg" src="" alt="Thumbnail">
+                    <span id="thumbName">photo.jpg</span>
+                </div>
+                <button class="remove-img-btn" onclick="clearAttachedPhoto()">✕</button>
+            </div>
+
+            <!-- 6. Bottom Input Bar -->
+            <div class="chat-input-bar">
+                <button class="icon-btn" onclick="triggerCamera()" title="Upload Photo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                </button>
+                <input type="file" id="hiddenPhotoInput" accept="image/*" onchange="onPhotoSelected(event)">
+
+                <button class="icon-btn" onclick="triggerVoice()" id="micBtn" title="Voice Input">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                </button>
+
+                <input type="text" class="msg-input" id="messageInput" placeholder="Your Message" onkeydown="handleKeyDown(event)">
+
+                <button class="send-btn" onclick="sendMessage()" title="Send">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: COMPLAINT REGISTRATION PAGE (Pre-filled from Chatbot) -->
+        <div id="registerScreen" class="app-screen" style="display: none; overflow-y: auto; padding: 14px; background: #eef4f8; gap: 12px;">
+            <!-- Informational Banner -->
+            <div style="background: linear-gradient(135deg, #0b3b64, #1e40af); color: white; border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 12px rgba(11, 59, 100, 0.2);">
+                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">WARD 19A · GRIEVANCE PORTAL</div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin-top: 2px;">📝 नवी तक्रार नोंदणी (Grievance Form)</h3>
+                <p style="font-size: 0.78rem; opacity: 0.9; margin-top: 2px;">चॅटबॉटमधील माहिती पुढे घेतली आहे. कृपया तपशील तपासून सबमिट करा.</p>
+            </div>
+
+            <!-- Form Card -->
+            <div class="form-card">
+                <div>
+                    <label class="form-label">तक्रार वर्ग / श्रेणी (Category):</label>
+                    <select class="form-input-text" id="regCategory">
+                        <option value="pothole">🕳️ Pothole & Road Damage (खड्डा व रस्ता)</option>
+                        <option value="streetlight">💡 Streetlight (पथदिवा व विद्युत)</option>
+                        <option value="garbage">🗑️ Garbage & Cleanliness (कचरा व स्वच्छता)</option>
+                        <option value="drainage">🌊 Drainage & Sewerage (ड्रेनेज व सांडपाणी)</option>
+                        <option value="pipeline_water_leakage">🚰 Water Pipeline Leakage (पाणी गळती)</option>
+                        <option value="traffic_jams">🚦 Traffic Congestion (वाहतूक कोंडी)</option>
+                        <option value="trees">🌳 Fallen Trees & Garden (झाड पडणे व उद्यान)</option>
+                        <option value="encroachment">🚫 Encroachment (अतिक्रमण)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label">तक्रारीचे सविस्तर वर्णन (Description):</label>
+                    <textarea class="form-input-text" id="regDesc" rows="3" placeholder="आपल्या समस्येचे वर्णन येथे लिहा..."></textarea>
+                </div>
+
+                <div>
+                    <label class="form-label">स्थान / GPS लोकेशन (Location):</label>
+                    <div style="display: flex; gap: 6px;">
+                        <input type="text" class="form-input-text" id="regLat" placeholder="Lat" readonly style="font-size: 0.8rem;">
+                        <input type="text" class="form-input-text" id="regLng" placeholder="Lng" readonly style="font-size: 0.8rem;">
+                        <button class="circle-btn" type="button" onclick="refreshRegistrationGPS()" title="GPS Get">📍</button>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">📍 PCMC प्रभाग 19A कार्यक्षेत्र आपोआप निर्धारित केले आहे.</div>
+                </div>
+
+                <div>
+                    <label class="form-label">समस्येचा फोटो / पुरावा (Photo Evidence):</label>
+                    <div class="upload-dropzone" onclick="document.getElementById('regFileInput').click()">
+                        <p id="regUploadNotice" style="font-size: 0.82rem; color: #64748b;">📷 फोटो जोडण्यासाठी येथे टॅप करा (Camera / Gallery)</p>
+                        <img id="regPreviewImg" style="display:none; max-height: 120px; border-radius: 8px; margin: 6px auto 0 auto; object-fit: cover;" alt="Preview">
+                    </div>
+                    <input type="file" id="regFileInput" accept="image/*" onchange="onRegPhotoSelected(event)" style="display:none;">
+                </div>
+
+                <div>
+                    <label class="form-label">प्राधान्य (Priority):</label>
+                    <select class="form-input-text" id="regPriority">
+                        <option value="">🤖 AI Auto-Detect (स्वयंचलित)</option>
+                        <option value="HIGH">🚨 High / तातडीचे (SLA 12-24h)</option>
+                        <option value="MEDIUM">⚡ Medium / मध्यम (SLA 24-48h)</option>
+                        <option value="LOW">ℹ️ Low / सर्वसाधारण (SLA 48-72h)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label">नागरिकाचा मोबाईल क्रमांक (Citizen Phone):</label>
+                    <input type="text" class="form-input-text" id="regPhone" value="9876543210" placeholder="१० अंकी मोबाईल नंबर">
+                </div>
+
+                <button class="btn-submit-full" id="btnSubmitRegForm" onclick="submitRegistrationFromForm()">
+                    🚀 तक्रार सबमिट करा (Submit Complaint)
+                </button>
+
+                <button type="button" onclick="showScreen('chat')" style="background: none; border: none; color: #64748b; font-size: 0.82rem; font-weight: 600; cursor: pointer; padding: 6px; text-align: center;">
+                    ← चॅटवर परत जा (Cancel & Return to Chat)
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: COMPLAINT TRACKING PAGE (Live Status & Timeline) -->
+        <div id="trackingScreen" class="app-screen" style="display: none; overflow-y: auto; padding: 14px; background: #eef4f8; gap: 12px;">
+            <!-- Success Banner -->
+            <div style="background: linear-gradient(135deg, #059669, #10b981); color: white; border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">🎉</span>
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 700;">तक्रार यशस्वीरित्या नोंदवली गेली!</h3>
+                        <p style="font-size: 0.78rem; opacity: 0.95;">आपली समस्या महापालिका वॉर्ड कक्षामध्ये दाखल झाली आहे.</p>
+                    </div>
                 </div>
             </div>
 
-        </div>
+            <!-- Ticket Summary Card -->
+            <div class="form-card" style="gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <div>
+                        <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">तक्रार तिकीट क्रमांक:</span>
+                        <div style="font-size: 1.05rem; font-weight: 800; color: #0b3b64; display: flex; align-items: center; gap: 6px;">
+                            <span id="trackTicketId">WM-20260918-0000</span>
+                            <button onclick="copyTicketId()" title="Copy ID" style="background: #e2e8f0; border: none; border-radius: 4px; padding: 2px 5px; cursor: pointer; font-size: 0.72rem;">📋</button>
+                        </div>
+                    </div>
+                    <span class="badge-pill badge-green" id="trackStatusPill">REGISTERED</span>
+                </div>
 
-        <!-- 4. Quick Suggestion Chips (Select Category without immediate complaint creation) -->
-        <div class="chips-scroll">
-            <span class="quick-chip" onclick="selectCategoryBlock('streetlight', '💡 Streetlight (पथदिवा)')">💡 Streetlight (पथदिवा)</span>
-            <span class="quick-chip" onclick="selectCategoryBlock('pothole', '🕳️ Pothole (खड्डा)')">🕳️ Pothole (खड्डा)</span>
-            <span class="quick-chip" onclick="selectCategoryBlock('garbage', '🗑️ Garbage (कचरा)')">🗑️ Garbage (कचरा)</span>
-            <span class="quick-chip" onclick="selectCategoryBlock('drainage', '🌊 Drainage (ड्रेनेज)')">🌊 Drainage (ड्रेनेज)</span>
-            <span class="quick-chip" onclick="selectCategoryBlock('pipeline_water_leakage', '🚰 Water Leak (पाणी गळती)')">🚰 Water Leak (पाणी गळती)</span>
-            <span class="quick-chip danger" onclick="selectCategoryBlock('profanity_test', '🚫 Profanity Test')">🚫 Profanity Test</span>
-        </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8rem; margin-top: 4px;">
+                    <div><span style="color:#64748b;">वर्ग:</span> <strong id="trackCategory" style="color:#0b3b64;">Pothole</strong></div>
+                    <div><span style="color:#64748b;">प्रभाग:</span> <strong id="trackWard" style="color:#0b3b64;">Ward 19A</strong></div>
+                    <div><span style="color:#64748b;">प्राधान्य:</span> <span class="badge-pill badge-orange" id="trackPriority">P3 (Medium)</span></div>
+                    <div><span style="color:#64748b;">मुदत (SLA):</span> <strong id="trackSla" style="color:#0b3b64;">24 तास</strong></div>
+                </div>
 
-        <!-- 5. Photo Attachment Preview Strip -->
-        <div class="preview-strip" id="previewStrip">
-            <div class="preview-thumb">
-                <img id="thumbImg" src="" alt="Thumbnail">
-                <span id="thumbName">photo.jpg</span>
+                <!-- Assigned Worker Box -->
+                <div style="background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px; padding: 10px; font-size: 0.82rem; margin-top: 4px;">
+                    <div style="font-weight: 700; color: #0b3b64; margin-bottom: 2px;">👷 नियुक्त क्षेत्रीय अधिकारी (Assigned Field Engineer):</div>
+                    <div style="color: #0369a1; font-weight: 700;" id="trackWorkerName">Er. संदीप माने</div>
+                    <div style="color: #475569; font-size: 0.75rem;" id="trackWorkerContact">📞 020-67333333 (Ward 19A Engineering Cell)</div>
+                </div>
             </div>
-            <button class="remove-img-btn" onclick="clearAttachedPhoto()">✕</button>
-        </div>
 
-        <!-- 6. Bottom Input Bar -->
-        <div class="chat-input-bar">
-            <!-- Camera Button -->
-            <button class="icon-btn" onclick="triggerCamera()" title="Upload Photo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-            </button>
-            <input type="file" id="hiddenPhotoInput" accept="image/*" onchange="onPhotoSelected(event)">
+            <!-- 4-Stage Visual Timeline Card -->
+            <div class="form-card">
+                <h4 style="color: #0b3b64; font-size: 0.92rem; font-weight: 700; margin-bottom: 8px;">⏱️ तक्रार निवारण प्रगती (Live Timeline):</h4>
+                
+                <div class="track-timeline" id="trackTimelineContainer">
+                    <!-- Dynamic Stages rendered here -->
+                </div>
+            </div>
 
-            <!-- Mic Button -->
-            <button class="icon-btn" onclick="triggerVoice()" id="micBtn" title="Voice Input">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-            </button>
-
-            <!-- Message Input -->
-            <input type="text" class="msg-input" id="messageInput" placeholder="Your Message" onkeydown="handleKeyDown(event)">
-
-            <!-- Send Button -->
-            <button class="send-btn" onclick="sendMessage()" title="Send">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-            </button>
+            <!-- Action Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                <button class="btn-submit-full" onclick="showScreen('chat')">
+                    💬 चॅटवर परत जा (Back to AI Chat)
+                </button>
+                <button onclick="refreshLiveTicketStatus()" style="background: #ffffff; color: #0b3b64; border: 1px solid #cbd5e1; padding: 11px; border-radius: 12px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    🔄 ताज्या स्थितीसाठी रीफ्रेश करा (Refresh Status)
+                </button>
+                <button onclick="alert('📲 WhatsApp सूचना सुरू आहेत! सर्व अपडेट्स आपल्या +91 मोबाईलवर पाठवले जातील.')" style="background: #25d366; color: white; border: none; padding: 11px; border-radius: 12px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    📱 WhatsApp वर अपडेट मिळवा
+                </button>
+            </div>
         </div>
 
         <!-- 7. Android Bottom Navigation Bar -->
         <div class="android-nav-bar">
-            <div class="nav-key square"></div>
-            <div class="nav-key circle"></div>
-            <div class="nav-key triangle"></div>
+            <div class="nav-key square" onclick="showScreen('tracking')" title="तक्रार स्थिती (Tracking)"></div>
+            <div class="nav-key circle" onclick="showScreen('chat')" title="AI चॅट (Chat)"></div>
+            <div class="nav-key triangle" onclick="handleHeaderBack()" title="मागे जा (Back)"></div>
         </div>
     </div>
 
@@ -667,10 +965,16 @@
         setInterval(updateClock, 1000);
         updateClock();
 
+        // Global State
         let selectedPhotoFile = null;
         let citizenEmail = "adityabhagat4216@gmail.com";
         let defaultLat = 18.6010;
         let defaultLng = 73.7630;
+        let currentCategoryKey = null;
+        let currentCategoryLabel = null;
+        let currentActiveScreen = 'chat'; // 'chat' | 'register' | 'tracking'
+        let currentActiveTicketId = null;
+        let regFormPhotoFile = null;
 
         // Try getting actual browser GPS location in background
         if (navigator.geolocation) {
@@ -683,6 +987,69 @@
             );
         }
 
+        // ==========================================
+        // 1. SCREEN NAVIGATION & DYNAMIC APP BAR
+        // ==========================================
+        function showScreen(screenName) {
+            currentActiveScreen = screenName;
+            const chatScreen = document.getElementById('chatScreen');
+            const registerScreen = document.getElementById('registerScreen');
+            const trackingScreen = document.getElementById('trackingScreen');
+            const topBackBtn = document.getElementById('topBackBtn');
+            const headerTitle = document.getElementById('headerTitle');
+            const headerSubtitle = document.getElementById('headerSubtitle');
+            const headerOnlinePill = document.getElementById('headerOnlinePill');
+            const headerAvatar = document.getElementById('headerAvatar');
+
+            if (screenName === 'chat') {
+                chatScreen.style.display = 'flex';
+                registerScreen.style.display = 'none';
+                trackingScreen.style.display = 'none';
+
+                headerTitle.innerText = 'WardMitra AI';
+                headerSubtitle.innerText = 'Marathi NLP · Ward 19A, KDMC';
+                headerOnlinePill.style.display = 'flex';
+                topBackBtn.style.display = 'none';
+                headerAvatar.style.display = 'flex';
+                scrollBottom();
+            } else if (screenName === 'register') {
+                chatScreen.style.display = 'none';
+                registerScreen.style.display = 'flex';
+                registerScreen.style.flexDirection = 'column';
+                trackingScreen.style.display = 'none';
+
+                headerTitle.innerText = 'तक्रार नोंदणी (Register)';
+                headerSubtitle.innerText = 'प्रभाग १९A · नागरिक तक्रार कक्ष';
+                headerOnlinePill.style.display = 'none';
+                topBackBtn.style.display = 'flex';
+                headerAvatar.style.display = 'none';
+                registerScreen.scrollTop = 0;
+            } else if (screenName === 'tracking') {
+                chatScreen.style.display = 'none';
+                registerScreen.style.display = 'none';
+                trackingScreen.style.display = 'flex';
+                trackingScreen.style.flexDirection = 'column';
+
+                headerTitle.innerText = 'तक्रार स्थिती (Live Track)';
+                headerSubtitle.innerText = currentActiveTicketId ? `तिकीट क्र.: ${currentActiveTicketId}` : 'Ward 19A Redressal';
+                headerOnlinePill.style.display = 'none';
+                topBackBtn.style.display = 'flex';
+                headerAvatar.style.display = 'none';
+                trackingScreen.scrollTop = 0;
+            }
+        }
+
+        function handleHeaderBack() {
+            if (currentActiveScreen === 'register' || currentActiveScreen === 'tracking') {
+                showScreen('chat');
+            } else {
+                window.location.href = '/static/index.html';
+            }
+        }
+
+        // ==========================================
+        // 2. CHAT PHOTO & VOICE CONTROLS
+        // ==========================================
         function triggerCamera() {
             document.getElementById('hiddenPhotoInput').click();
         }
@@ -730,14 +1097,13 @@
                     micBtn.style.background = '#0b3b64';
                 };
             } else {
-                // Fallback simulation
                 input.value = "वाकड चौकात खड्डा पडला आहे, कृपया लवकर काम करा.";
             }
         }
 
-        let currentCategoryKey = null;
-        let currentCategoryLabel = null;
-
+        // ==========================================
+        // 3. CHATBOT CATEGORY & MESSAGE DISPATCH
+        // ==========================================
         function selectCategoryBlock(catKey, catLabel) {
             currentCategoryKey = catKey;
             currentCategoryLabel = catLabel;
@@ -767,13 +1133,6 @@
             });
         }
 
-        function confirmRegisterCurrentCategory() {
-            const input = document.getElementById('messageInput');
-            const additionalDesc = input.value.trim();
-            input.value = '';
-            sendMessage(true, additionalDesc);
-        }
-
         function handleKeyDown(event) {
             if (event.key === 'Enter') {
                 sendMessage(false);
@@ -800,7 +1159,6 @@
 
             const currentTime = formatTime();
 
-            // Render User Message Bubble
             if (text || selectedPhotoFile) {
                 renderUserMessage(text || (selectedPhotoFile ? "📷 Photo uploaded" : ""), selectedPhotoFile, currentTime);
             }
@@ -813,7 +1171,11 @@
 
             const formData = new FormData();
             if (text) formData.append('message', text);
-            if (currentCategoryKey) formData.append('category', currentCategoryKey);
+
+            const isProcessOrHelpQuery = /^(how|what|who|help|steps|process|procedure|तक्रार\s*कशी|कशी|माहिती|पायऱ्या|मला\s*तक्रार|takrar\s*kashi|step)/i.test(text.trim());
+            if (currentCategoryKey && !isProcessOrHelpQuery) {
+                formData.append('category', currentCategoryKey);
+            }
             formData.append('latitude', defaultLat);
             formData.append('longitude', defaultLng);
             formData.append('citizen_phone', citizenEmail);
@@ -847,9 +1209,10 @@
         }
 
         function handleBotChatResponse(data, time) {
-            if (data.intent === 'GREETING') {
+            if (data.intent === 'GREETING' || data.intent === 'COMPLAINT_PROCESS_GUIDE') {
                 renderBotPlainMessage(data.reply, time);
-            } else if (data.intent === 'CATEGORY_SELECTED') {
+            } else if (data.intent === 'CATEGORY_SELECTED' || data.intent === 'CATEGORY_CLARIFICATION_REQUIRED' || data.intent === 'EVIDENCE_REQUIRED') {
+                if (data.category) currentCategoryKey = data.category;
                 renderBotCategoryPrompt(data, time);
             } else if (data.intent === 'COMPLAINT_REGISTERED') {
                 renderBotTicketCard(data, time);
@@ -857,7 +1220,7 @@
                 currentCategoryLabel = null;
             } else if (data.intent === 'MODERATION_REJECTED') {
                 renderBotRejectedCard(data, time);
-            } else if (data.action_prompt === 'confirm_or_detail') {
+            } else if (data.action_prompt === 'confirm_or_detail' || data.action_prompt === 'describe_problem' || data.action_prompt === 'upload_photo') {
                 if (data.category) currentCategoryKey = data.category;
                 renderBotCategoryPrompt(data, time);
             } else {
@@ -865,6 +1228,292 @@
             }
         }
 
+        // ==========================================
+        // 4. DATA HANDOFF: CHATBOT -> REGISTRATION SCREEN
+        // ==========================================
+        function openRegisterPageFromChat(catKey, catBadge) {
+            const categorySelect = document.getElementById('regCategory');
+            const descInput = document.getElementById('regDesc');
+            const latInput = document.getElementById('regLat');
+            const lngInput = document.getElementById('regLng');
+            const phoneInput = document.getElementById('regPhone');
+
+            // 1. Pre-fill category
+            const targetCat = catKey || currentCategoryKey || 'pothole';
+            if (categorySelect.querySelector(`option[value="${targetCat}"]`)) {
+                categorySelect.value = targetCat;
+            } else {
+                categorySelect.value = 'pothole';
+            }
+
+            // 2. Pre-fill description from chat message if citizen typed anything, else intelligent default
+            const typedText = document.getElementById('messageInput').value.trim();
+            if (typedText) {
+                descInput.value = typedText;
+            } else {
+                const defaultDescriptions = {
+                    'pothole': 'रस्त्यावर मोठा खड्डा पडला आहे, वाहने घसरत असून अपघाताचा धोका आहे. कृपया तात्काळ दुरुस्ती करावी.',
+                    'streetlight': 'रस्त्यावरील पथदिवा (स्ट्रीटलाईट) बंद असून रात्री अंधार पडतो. दुरुस्ती करावी.',
+                    'garbage': 'परिसरात कचऱ्याचे साम्राज्य पसरले असून दुर्गंधी सुटली आहे. कचरा कुंडी त्वरित साफ करावी.',
+                    'drainage': 'ड्रेनेज चेंबर तुंबले असून सांडपाणी रस्त्यावर वाहत आहे.',
+                    'pipeline_water_leakage': 'मुख्य पिण्याच्या पाण्याची पाईपलाईन फुटून प्रचंड पाणी वाया जात आहे.',
+                    'traffic_jams': 'वाहतूक कोंडी झाली असून ट्रॅफिक वॉर्डन नेमण्यात यावा.',
+                    'trees': 'झाडाची मोठी फांदी रस्त्यावर कोसळली असून मार्ग अडवला आहे.',
+                    'encroachment': 'पादचारी मार्गावर अनधिकृत अतिक्रमण झाले आहे.'
+                };
+                descInput.value = defaultDescriptions[targetCat] || `${catBadge || 'नागरी समस्या'} संदर्भात तात्काळ निवारण करावे.`;
+            }
+
+            // 3. Pre-fill GPS coordinates
+            latInput.value = (defaultLat || 18.6010).toFixed(4);
+            lngInput.value = (defaultLng || 73.7630).toFixed(4);
+
+            // 4. Pre-fill citizen phone
+            phoneInput.value = (citizenEmail && citizenEmail.indexOf('@') === -1) ? citizenEmail : '9876543210';
+
+            // 5. Carry forward photo if citizen took/selected photo in chat
+            const previewImg = document.getElementById('regPreviewImg');
+            const uploadNotice = document.getElementById('regUploadNotice');
+            if (selectedPhotoFile) {
+                regFormPhotoFile = selectedPhotoFile;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    uploadNotice.innerText = `✅ फोटो जोडला: ${selectedPhotoFile.name}`;
+                };
+                reader.readAsDataURL(selectedPhotoFile);
+            } else {
+                regFormPhotoFile = null;
+                previewImg.style.display = 'none';
+                uploadNotice.innerText = '📷 फोटो जोडण्यासाठी येथे टॅप करा (Camera / Gallery)';
+            }
+
+            // 6. Transition to Registration Page
+            showScreen('register');
+        }
+
+        function onRegPhotoSelected(event) {
+            const file = event.target.files[0];
+            if (file) {
+                regFormPhotoFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.getElementById('regPreviewImg');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    document.getElementById('regUploadNotice').innerText = `✅ फोटो निवडला: ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function refreshRegistrationGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        defaultLat = pos.coords.latitude;
+                        defaultLng = pos.coords.longitude;
+                        document.getElementById('regLat').value = defaultLat.toFixed(4);
+                        document.getElementById('regLng').value = defaultLng.toFixed(4);
+                        alert(`📍 GPS लोकेशन मिळाले: ${defaultLat.toFixed(4)}, ${defaultLng.toFixed(4)}`);
+                    },
+                    (err) => {
+                        alert("⚠️ GPS सिग्नल मिळाला नाही. पूर्वनिर्धारित प्रभाग १९A लोकेशन वापरले.");
+                        document.getElementById('regLat').value = (defaultLat || 18.6010).toFixed(4);
+                        document.getElementById('regLng').value = (defaultLng || 73.7630).toFixed(4);
+                    }
+                );
+            } else {
+                document.getElementById('regLat').value = (defaultLat || 18.6010).toFixed(4);
+                document.getElementById('regLng').value = (defaultLng || 73.7630).toFixed(4);
+            }
+        }
+
+        // ==========================================
+        // 5. SUBMIT COMPLAINT FORM -> API -> TRACKING SCREEN
+        // ==========================================
+        async function submitRegistrationFromForm() {
+            const category = document.getElementById('regCategory').value;
+            const desc = document.getElementById('regDesc').value.trim();
+            const lat = parseFloat(document.getElementById('regLat').value) || defaultLat;
+            const lng = parseFloat(document.getElementById('regLng').value) || defaultLng;
+            const priority = document.getElementById('regPriority').value;
+            const phone = document.getElementById('regPhone').value.trim() || '9876543210';
+            const submitBtn = document.getElementById('btnSubmitRegForm');
+
+            if (!desc) {
+                alert("कृपया समस्येचे थोडे वर्णन द्या. (Please provide a description.)");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "⏳ तक्रार नोंदवत आहे (Registering)...";
+
+            const formData = new FormData();
+            formData.append('description', desc);
+            if (lat) formData.append('latitude', lat);
+            if (lng) formData.append('longitude', lng);
+            formData.append('citizen_phone', phone);
+            if (priority) formData.append('priority', priority);
+            if (regFormPhotoFile) {
+                formData.append('photo', regFormPhotoFile);
+            }
+
+            try {
+                const response = await fetch('/api/v1/complaints/register', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                submitBtn.disabled = false;
+                submitBtn.innerText = "🚀 तक्रार सबमिट करा (Submit Complaint)";
+
+                if (response.ok) {
+                    currentActiveTicketId = data.ticket_id;
+
+                    // 1. Add confirmation card into chat thread for history
+                    const chatPayload = {
+                        intent: 'COMPLAINT_REGISTERED',
+                        language: 'mr',
+                        category_name: data.category_name_mr || data.detected_category,
+                        ticket_data: data
+                    };
+                    renderBotTicketCard(chatPayload, formatTime());
+
+                    // 2. Open Live Tracking Screen
+                    openTrackingPage(data);
+                } else {
+                    alert(`⚠️ तक्रार नोंदणी अयशस्वी: ${data.detail || "अपेक्षित त्रुटी आली."}`);
+                }
+            } catch (err) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "🚀 तक्रार सबमिट करा (Submit Complaint)";
+                alert(`⚠️ नेटवर्क एरर: ${err.message}`);
+            }
+        }
+
+        // ==========================================
+        // 6. LIVE TRACKING SCREEN & 4-STAGE TIMELINE
+        // ==========================================
+        function openTrackingPage(ticketData) {
+            currentActiveTicketId = ticketData.ticket_id;
+
+            document.getElementById('trackTicketId').innerText = ticketData.ticket_id || 'WM-TICKET';
+            
+            const statusPill = document.getElementById('trackStatusPill');
+            const curStatus = ticketData.status || 'REGISTERED';
+            statusPill.innerText = curStatus;
+            if (curStatus === 'RESOLVED' || curStatus === 'CLOSED') {
+                statusPill.className = 'badge-pill badge-green';
+            } else if (curStatus === 'IN_PROGRESS') {
+                statusPill.className = 'badge-pill badge-blue';
+            } else {
+                statusPill.className = 'badge-pill badge-orange';
+            }
+
+            document.getElementById('trackCategory').innerText = ticketData.category_name_mr || ticketData.detected_category || 'Pothole';
+            document.getElementById('trackWard').innerText = `Ward ${ticketData.ward || ticketData.ward_number || '19A'}`;
+            document.getElementById('trackPriority').innerText = `${ticketData.priority || 'MEDIUM'} (${ticketData.severity || 'Medium'})`;
+            document.getElementById('trackSla').innerText = `${ticketData.sla_hours || 24} तास`;
+
+            const workerName = ticketData.assigned_worker_name || 'Er. संदीप माने';
+            const workerContact = ticketData.assigned_worker_contact ? `📞 ${ticketData.assigned_worker_contact} (Ward 19A Cell)` : '📞 020-67333333 (Ward 19A Cell)';
+            document.getElementById('trackWorkerName').innerText = workerName;
+            document.getElementById('trackWorkerContact').innerText = workerContact;
+
+            renderTrackingTimeline(curStatus);
+            showScreen('tracking');
+        }
+
+        function openTrackingPageFromChat(ticketId) {
+            if (!ticketId) return;
+            currentActiveTicketId = ticketId;
+            refreshLiveTicketStatus();
+            showScreen('tracking');
+        }
+
+        function renderTrackingTimeline(currentStatus) {
+            const container = document.getElementById('trackTimelineContainer');
+            const stages = [
+                { key: 'REGISTERED', title: 'तक्रार नोंदणी झाली (Grievance Registered)', desc: 'AI प्रणालीने तक्रार पडताळली, प्राधान्य आणि प्रभाग १९A निश्चित केला.' },
+                { key: 'ASSIGNED', title: 'क्षेत्रीय अधिकारी नियुक्त (Field Officer Assigned)', desc: 'कनिष्ठ अभियंता यांच्याकडे निराकरणासाठी तिकीट सोपवण्यात आले.' },
+                { key: 'IN_PROGRESS', title: 'कार्यवाही प्रत्यक्ष सुरू (Work In Progress)', desc: 'महापालिका पथक घटनास्थळी हजर असून दुरुस्तीचे काम सुरू आहे.' },
+                { key: 'RESOLVED', title: 'समस्या निवारण पूर्ण (Resolved & Closed)', desc: 'काम पूर्ण झाले असून नागरिकांच्या पुष्टीसाठी अहवाल अपलोड केला आहे.' }
+            ];
+
+            const order = ['REGISTERED', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+            const curIdx = order.indexOf(currentStatus) >= 0 ? order.indexOf(currentStatus) : 0;
+
+            let html = '';
+            stages.forEach((st, idx) => {
+                const isDone = idx < curIdx || (idx === stages.length - 1 && (currentStatus === 'RESOLVED' || currentStatus === 'CLOSED'));
+                const isActive = idx === curIdx && !isDone;
+                const isLast = idx === stages.length - 1;
+
+                let dotClass = 'timeline-dot';
+                let dotContent = `${idx + 1}`;
+                if (isDone) {
+                    dotClass += ' completed';
+                    dotContent = '✓';
+                } else if (isActive) {
+                    dotClass += ' active';
+                    dotContent = `${idx + 1}`;
+                }
+
+                let connectorClass = 'timeline-connector';
+                if (idx < curIdx) {
+                    connectorClass += ' completed';
+                }
+
+                html += `
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <div class="${dotClass}">${dotContent}</div>
+                            ${!isLast ? `<div class="${connectorClass}"></div>` : ''}
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">${st.title}</div>
+                            <div class="timeline-desc">${st.desc}</div>
+                            <div class="timeline-time">${isDone ? 'पूर्ण झाले (Done)' : (isActive ? '⚡ सध्या सुरू आहे (Current Stage)' : 'प्रतीक्षेत (Pending)')}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function refreshLiveTicketStatus() {
+            if (!currentActiveTicketId) return;
+
+            try {
+                const res = await fetch(`/api/v1/complaints/${encodeURIComponent(currentActiveTicketId)}/status`);
+                if (res.ok) {
+                    const liveData = await res.json();
+                    openTrackingPage(liveData);
+                } else {
+                    alert(`तक्रार क्र. ${currentActiveTicketId} ची स्थिती मिळवता आली नाही.`);
+                }
+            } catch (e) {
+                alert("नेटवर्क एरर: " + e.message);
+            }
+        }
+
+        function copyTicketId() {
+            const ticketId = currentActiveTicketId || document.getElementById('trackTicketId').innerText;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(ticketId);
+                alert(`📋 तक्रार क्रमांक कॉपी केला: ${ticketId}`);
+            } else {
+                alert(`तिकीट क्र.: ${ticketId}`);
+            }
+        }
+
+        // ==========================================
+        // 7. MESSAGE RENDERING HELPERS
+        // ==========================================
         function renderUserMessage(text, file, time) {
             const chatBody = document.getElementById('chatBody');
             const typingRow = document.getElementById('typingRow');
@@ -890,6 +1539,13 @@
             scrollBottom();
         }
 
+        function formatMarkdownText(msg) {
+            if (!msg) return '';
+            return msg
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        }
+
         function renderBotPlainMessage(msg, time) {
             const chatBody = document.getElementById('chatBody');
             const typingRow = document.getElementById('typingRow');
@@ -900,7 +1556,7 @@
                 <div class="bot-icon-small">🤖</div>
                 <div class="message-bubble bot">
                     <div class="bubble-tag">WARDMITRA AI</div>
-                    <div style="white-space: pre-line;">${msg}</div>
+                    <div style="white-space: pre-line;">${formatMarkdownText(msg)}</div>
                     <div class="msg-time">${time}</div>
                 </div>
             `;
@@ -914,7 +1570,8 @@
 
             const isMr = (data.language === 'mr');
             const catBadge = data.category_name || (isMr ? 'नागरी समस्या' : 'Civic Issue');
-            const btnText = isMr ? '🚀 तक्रार नोंदवा (Register Ticket)' : '🚀 Register Complaint Now';
+            const btnText = isMr ? '🚀 तक्रार नोंदवा (Register Complaint)' : '🚀 Register Complaint Now';
+            const catKey = data.category || currentCategoryKey || 'pothole';
 
             const row = document.createElement('div');
             row.className = 'message-row bot';
@@ -923,9 +1580,9 @@
                 <div class="message-bubble bot">
                     <div class="bubble-tag">WARDMITRA AI</div>
                     <span class="category-badge-pill">📂 ${catBadge}</span>
-                    <div style="white-space: pre-line; margin-top: 4px;">${data.reply}</div>
+                    <div style="white-space: pre-line; margin-top: 4px;">${formatMarkdownText(data.reply)}</div>
                     <div class="action-container">
-                        <button class="btn-confirm-ticket" onclick="confirmRegisterCurrentCategory()">
+                        <button class="btn-confirm-ticket" onclick="openRegisterPageFromChat('${catKey}', '${catBadge}')">
                             ${btnText}
                         </button>
                     </div>
@@ -950,7 +1607,7 @@
             const workerLabel = isMr ? 'नेमलेले कामगार:' : 'Assigned Worker:';
             const slaLabel = isMr ? 'निकालाची मुदत (SLA):' : 'SLA Target:';
             const hoursSuffix = isMr ? 'तास' : 'Hours';
-            const trackBtnText = isMr ? '🔍 पोर्टलवर ट्रॅक करा →' : '🔍 Track on Portal →';
+            const trackBtnText = isMr ? '🔍 थेट ट्रॅकिंग स्क्रीनवर पहा (Live Track) →' : '🔍 Live Track Status →';
 
             const workerName = t.assigned_worker_name || (isMr ? 'Er. संदीप माने' : 'Er. Sandeep Mane');
             const workerContact = t.assigned_worker_contact ? ` (${t.assigned_worker_contact})` : '';
@@ -973,7 +1630,7 @@
                         </div>
                         <div class="ticket-row">
                             <span>${wardLabel}</span>
-                            <span style="font-weight: 600; color: #0b3b64;">Ward ${t.ward || '19A'}</span>
+                            <span style="font-weight: 600; color: #0b3b64;">Ward ${t.ward || t.ward_number || '19A'}</span>
                         </div>
                         <div class="ticket-row" style="background: #e0f2fe; padding: 4px 6px; border-radius: 6px;">
                             <span style="color: #0369a1; font-weight: 600;">${workerLabel}</span>
@@ -985,9 +1642,9 @@
                         </div>
                     </div>
                     <div style="margin-top: 8px;">
-                        <a href="/static/index.html" style="font-size: 0.78rem; color: #0284c7; text-decoration: none; font-weight: 600;">
+                        <button onclick="openTrackingPageFromChat('${t.ticket_id}')" style="background: none; border: none; font-size: 0.82rem; color: #0284c7; text-decoration: underline; font-weight: 700; cursor: pointer; padding: 0;">
                             ${trackBtnText}
-                        </a>
+                        </button>
                     </div>
                     <div class="msg-time">${time}</div>
                 </div>

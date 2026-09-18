@@ -12,3 +12,4 @@ apscheduler>=3.11.0
 tzlocal>=5.0
 numpy>=1.24.0
 ultralytics>=8.0.0
+pytest>=8.0.0

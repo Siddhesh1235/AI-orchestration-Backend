@@ -15,6 +15,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from fastapi.testclient import TestClient
 from PIL import Image
+import numpy as np
 
 from app.main import app
 
@@ -33,8 +34,9 @@ def test_health_endpoint():
 
 def test_full_complaint_lifecycle():
     """Verify end-to-end Grievance Registration, Tracking, Update, and Closure."""
-    # 1. Create a dummy image in-memory
-    img = Image.new("RGB", (100, 100), color="gray")
+    # 1. Create a valid textured civic test image in-memory
+    arr = np.random.randint(50, 200, size=(100, 100, 3), dtype=np.uint8)
+    img = Image.fromarray(arr)
     img_bytes = io.BytesIO()
     img.save(img_bytes, format="JPEG")
     img_bytes.seek(0)
@@ -76,7 +78,8 @@ def test_full_complaint_lifecycle():
     print("✓ Officer Status Update -> IN_PROGRESS Verified.")
 
     # 5. Officer marks RESOLVED with proof photo
-    res_img = Image.new("RGB", (100, 100), color="green")
+    res_arr = np.random.randint(40, 180, size=(100, 100, 3), dtype=np.uint8)
+    res_img = Image.fromarray(res_arr)
     res_bytes = io.BytesIO()
     res_img.save(res_bytes, format="JPEG")
     res_bytes.seek(0)

@@ -19,6 +19,30 @@ from app.services.scheduler_service import start_auto_escalation_scheduler, stop
 # 1. Initialize SQLite Database Tables on startup
 Base.metadata.create_all(bind=engine)
 
+def _safe_migrate_db():
+    try:
+        from sqlalchemy import text
+        with engine.connect() as conn:
+            res = conn.execute(text("PRAGMA table_info(complaints)")).fetchall()
+            cols = {r[1] for r in res}
+            new_cols = [
+                ("severity", "VARCHAR(32) DEFAULT 'MEDIUM'"),
+                ("is_emergency", "BOOLEAN DEFAULT 0"),
+                ("emergency_level", "VARCHAR(32) DEFAULT 'NONE'"),
+                ("verification_status", "VARCHAR(32) DEFAULT 'APPROVED'"),
+                ("fraud_score", "FLOAT DEFAULT 0.0"),
+                ("evidence_valid", "BOOLEAN DEFAULT 1"),
+            ]
+            for col_name, col_type in new_cols:
+                if col_name not in cols:
+                    conn.execute(text(f"ALTER TABLE complaints ADD COLUMN {col_name} {col_type}"))
+            conn.commit()
+    except Exception as e:
+        import logging
+        logging.getLogger("pcms.main").warning(f"DB auto-migration notice: {e}")
+
+_safe_migrate_db()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

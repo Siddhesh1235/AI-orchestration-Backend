@@ -14,6 +14,12 @@ class ComplaintRegisterResponse(BaseModel):
     confidence: float
     is_simulated: bool = False
     priority: str = "MEDIUM"
+    severity: Optional[str] = "MEDIUM"
+    is_emergency: Optional[bool] = False
+    emergency_level: Optional[str] = "NONE"
+    verification_status: Optional[str] = "APPROVED"
+    fraud_score: Optional[float] = 0.0
+    evidence_valid: Optional[bool] = True
     ward: Optional[int] = None
     assigned_department: str
     department_name_mr: Optional[str] = None
@@ -49,6 +55,12 @@ class ComplaintStatusResponse(BaseModel):
     ticket_id: str
     status: str
     priority: str = "MEDIUM"
+    severity: Optional[str] = "MEDIUM"
+    is_emergency: Optional[bool] = False
+    emergency_level: Optional[str] = "NONE"
+    verification_status: Optional[str] = "APPROVED"
+    fraud_score: Optional[float] = 0.0
+    evidence_valid: Optional[bool] = True
     detected_category: str
     category_name_mr: Optional[str] = None
     assigned_department: str

@@ -17,12 +17,18 @@ class ComplaintStatus(str, enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
     CLOSED = "CLOSED"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
 
 
 class PriorityLevel(str, enum.Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+    P1 = "P1"
+    P2 = "P2"
+    P3 = "P3"
+    P4 = "P4"
 
 
 class EscalationLevel(str, enum.Enum):
@@ -55,8 +61,16 @@ class Complaint(Base):
     confidence_score = Column(Float, nullable=False, default=0.0)
     is_simulated = Column(Boolean, default=False)
 
-    # Priority & Severity
+    # Priority, Severity & Emergency
     priority = Column(Enum(PriorityLevel), default=PriorityLevel.MEDIUM, nullable=False)
+    severity = Column(String(32), default="MEDIUM", nullable=True)
+    is_emergency = Column(Boolean, default=False, nullable=False)
+    emergency_level = Column(String(32), default="NONE", nullable=True)
+
+    # Verification & Fraud Risk
+    verification_status = Column(String(32), default="APPROVED", nullable=True)
+    fraud_score = Column(Float, default=0.0, nullable=True)
+    evidence_valid = Column(Boolean, default=True, nullable=True)
 
     # Municipal Department & SLA
     assigned_department = Column(String(64), nullable=False)

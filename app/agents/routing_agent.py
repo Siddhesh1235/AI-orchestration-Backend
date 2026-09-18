@@ -1,15 +1,19 @@
 """
-Department Routing & SLA Management Agent for PCMC Sarathi AI.
+Department Routing & SLA Management Agent for WardMitra AI / PCMC Sarathi.
 Assigns tickets to responsible PCMC departments, calculates SLA deadlines,
 and generates unique standardized PCMC Ticket IDs.
 """
 
 import yaml
 import random
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 
 from app.config.settings import settings
+from app.rules.department_rules import get_department_routing
+
+logger = logging.getLogger("pcms.routing_agent")
 
 
 class RoutingAgent:
@@ -25,23 +29,28 @@ class RoutingAgent:
                 self.categories_config = data.get("categories", {})
                 self.departments_config = data.get("departments", {})
         except Exception as e:
-            print(f"[RoutingAgent] Warning: Could not load {settings.MODEL_CONFIG_PATH}: {e}")
+            logger.warning(f"[RoutingAgent] Could not load {settings.MODEL_CONFIG_PATH}: {e}")
 
     def route_complaint(self, category: str) -> Dict[str, Any]:
         """
         Determines responsible department, SLA hours, deadline, and localized details.
+        Uses configurable department rules (Requirement 11).
         """
+        rule_info = get_department_routing(category)
+        dept_code = rule_info["department_code"]
+        sla_hours = rule_info["sla_hours"]
+        dept_name = rule_info["department_name"]
+        dept_name_mr = rule_info["department_name_mr"]
+
         cat_info = self.categories_config.get(category, {})
-        dept_code = cat_info.get("department", "HEALTH_SWM")
-        sla_hours = cat_info.get("sla_hours", 24)
-        
         dept_info = self.departments_config.get(dept_code, {})
         deadline = datetime.now(timezone.utc) + timedelta(hours=sla_hours)
 
         return {
             "department": dept_code,
-            "department_name_mr": cat_info.get("department_name_mr", "आरोग्य व घनकचरा व्यवस्थापन विभाग"),
-            "department_name_en": cat_info.get("department_name_en", "Health & Solid Waste Management"),
+            "department_name": dept_name,
+            "department_name_mr": dept_name_mr,
+            "department_name_en": cat_info.get("department_name_en", dept_name),
             "category_name_mr": cat_info.get("department_name_mr", category),
             "sla_hours": sla_hours,
             "sla_deadline": deadline,

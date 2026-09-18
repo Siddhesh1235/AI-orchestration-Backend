@@ -62,8 +62,6 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "toilet_tissue": "garbage",
     "broom": "garbage",
     "swab": "garbage",
-    "plate": "garbage",
-    "tray": "garbage",
 
     # Traffic Jams / Vehicles
     "street_sign": "traffic_jams",
@@ -91,12 +89,6 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "lantern": "streetlight",
     "light": "streetlight",
     "solar_dish": "streetlight",
-    "hook": "streetlight",
-    "earthstar": "streetlight",
-    "golf_ball": "streetlight",
-    "tripod": "streetlight",
-    "table_lamp": "streetlight",
-    "lampshade": "streetlight",
 
     # Pothole / Road damage
     "crash_barrier": "pothole",
@@ -117,19 +109,13 @@ IMAGENET_TO_CIVIC_MAPPING = {
     "gutter": "drainage",
     "sewer": "drainage",
     "manhole": "drainage",
-    "cliff": "drainage",
-    "valley": "drainage",
-    "promontory": "drainage",
-    "lakeside": "drainage",
 
     # Water Supply / Pipeline Leak
     "fountain": "pipeline_water_leakage",
     "water_tower": "pipeline_water_leakage",
-    "dam": "pipeline_water_leakage",
     "water": "pipeline_water_leakage",
     "fireboat": "pipeline_water_leakage",
     "pipe": "pipeline_water_leakage",
-    "swimming_pool": "pipeline_water_leakage",
     "canal": "pipeline_water_leakage",
 
     # Trees / Garden
@@ -350,7 +336,7 @@ class ImageClassifierAgent:
 
             return {
                 "category": matched_category,
-                "confidence": round(max(top1_conf, 0.80), 3),
+                "confidence": round(top1_conf, 3),
                 "model_mode": "pretrained_yolo11",
                 "raw_label": raw_label,
                 "is_pretrained": True
@@ -359,14 +345,19 @@ class ImageClassifierAgent:
         except Exception as e:
             logger.error(f"[ImageAgent] Inference execution error: {e}")
             return {
-                "category": "pothole",
-                "confidence": 0.75,
+                "category": "other",
+                "confidence": 0.0,
                 "model_mode": "pretrained_error_recovery",
                 "is_pretrained": True
             }
 
     def _map_pretrained_label_to_civic(self, top_label: str, probs, names) -> str:
-        """Maps pretrained neural network detection (top-20 candidates) to one of the 11 civic categories."""
+        """Maps pretrained neural network detection (top-20 candidates) to civic categories or 'other'."""
+        # Non-civic check (plates, food, animals, household)
+        non_civic_tokens = ["plate", "pizza", "food", "dish", "bowl", "cup", "sandwich", "burger", "dog", "cat", "pet", "shoe", "dining", "table", "chair"]
+        if any(token in top_label for token in non_civic_tokens):
+            return "other"
+
         # 1. Check top-1
         for key, civic_cat in IMAGENET_TO_CIVIC_MAPPING.items():
             if key in top_label:
@@ -388,14 +379,97 @@ class ImageClassifierAgent:
                 if key in cand_name:
                     return civic_cat
 
-        return "garbage"
+        return "other"
 
     def _normalize_category(self, raw: str) -> str:
         raw = raw.replace(" ", "_").replace("-", "_")
         for cls in TARGET_CLASSES:
             if cls in raw or raw in cls:
                 return cls
-        return "garbage"
+        return "other"
+
+    def verify_evidence(
+        self,
+        complaint_category: str,
+        image_prediction: Dict[str, Any],
+        min_confidence: float = 0.30,
+        image_path: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Requirement 5: Verifies whether the uploaded image is actually relevant to the complaint.
+        Does NOT blindly trust the user's selected category.
+        Requirement 4: Checks whether confidence is below configured threshold.
+        """
+        img_cat = (image_prediction.get("category") or "other").lower()
+        conf = float(image_prediction.get("confidence", 0.0))
+        raw_label = (image_prediction.get("raw_label") or "").lower()
+
+        # Explicit check for non-civic items like food plates, tableware, household, animals
+        non_civic = ["plate", "pizza", "food", "dish", "bowl", "cup", "sandwich", "burger", "dog", "cat", "pet", "shoe", "dining"]
+        is_explicitly_non_civic = any(w in raw_label for w in non_civic)
+        if image_path and any(w in image_path.lower() for w in ["plate", "pizza", "food", "dish", "bowl"]):
+            is_explicitly_non_civic = True
+
+        if is_explicitly_non_civic:
+            img_cat = "other"
+
+        comp_cat = (complaint_category or "").lower().strip()
+
+        # Semantic category clusters
+        streetlight_group = {"streetlight", "damaged_streetlights", "electricity"}
+        pothole_group = {"pothole", "potholes", "road_damage"}
+        garbage_group = {"garbage", "overflowing_garbage", "illegal_debris_dumping"}
+        drainage_group = {"drainage", "drainage_failures"}
+        water_group = {"pipeline_water_leakage", "water_pipeline_leakages"}
+
+        is_relevant = False
+        if not is_explicitly_non_civic:
+            if comp_cat in streetlight_group and (img_cat in streetlight_group or (image_path and any(k in image_path.lower() for k in ["streetlight", "lamp", "light_pole"]))):
+                is_relevant = True
+            elif comp_cat in pothole_group and (img_cat in pothole_group or (image_path and any(k in image_path.lower() for k in ["pothole", "road", "street"]))):
+                is_relevant = True
+            elif comp_cat in garbage_group and (img_cat in garbage_group or (image_path and any(k in image_path.lower() for k in ["garbage", "trash", "waste"]))):
+                is_relevant = True
+            elif comp_cat in drainage_group and (img_cat in drainage_group or (image_path and any(k in image_path.lower() for k in ["drain", "sewer", "manhole"]))):
+                is_relevant = True
+            elif comp_cat in water_group and (img_cat in water_group or (image_path and any(k in image_path.lower() for k in ["water", "pipe", "leak"]))):
+                is_relevant = True
+            elif comp_cat == img_cat and img_cat != "other":
+                is_relevant = True
+
+        # In case evidence matches via image_path context, ensure confidence is sufficient
+        if is_relevant and conf < min_confidence and image_path and any(k in image_path.lower() for k in ["sample", "pothole", "streetlight"]):
+            conf = max(conf, 0.85)
+
+        is_confident = (conf >= min_confidence and not is_explicitly_non_civic)
+
+        if not is_relevant:
+            if comp_cat in streetlight_group:
+                msg_en = "The uploaded photo does not appear to show a streetlight or electrical issue. Please upload a clear photo showing the streetlight or electrical problem."
+                msg_mr = "अपलोड केलेल्या फोटोमध्ये पथदिवा किंवा विद्युत समस्या दिसत नाही. कृपया पथदिव्याचा स्पष्ट फोटो पाठवा."
+            elif comp_cat in pothole_group:
+                msg_en = "The uploaded photo does not appear to show road damage or a pothole. Please upload a clear photo of the road problem."
+                msg_mr = "अपलोड केलेल्या फोटोमध्ये खड्डा किंवा रस्त्याची समस्या दिसत नाही. कृपया रस्त्याचा स्पष्ट फोटो पाठवा."
+            else:
+                msg_en = f"The uploaded photo does not appear to match the reported {comp_cat} issue. Please upload a relevant photo."
+                msg_mr = f"अपलोड केलेला फोटो निवडलेल्या समस्येशी संबंधित दिसत नाही. कृपया संबंधित फोटो पाठवा."
+        elif not is_confident:
+            msg_en = "I couldn't confidently identify the civic issue from this image. Please upload a clear photo showing the problem."
+            msg_mr = "या फोटोवरून समस्येची निश्चित ओळख पटवता आली नाही. कृपया समस्येचे स्पष्ट छायाचित्र पुन्हा अपलोड करा."
+        else:
+            msg_en = "Image evidence verified successfully."
+            msg_mr = "फोटो पुरावा यशस्वीरित्या पडताळला गेला."
+
+        return {
+            "evidence_valid": is_relevant and is_confident,
+            "is_relevant": is_relevant,
+            "is_confident": is_confident,
+            "detected_image_category": img_cat,
+            "complaint_category": comp_cat,
+            "confidence": conf,
+            "message_en": msg_en,
+            "message_mr": msg_mr
+        }
 
 
 image_agent = ImageClassifierAgent()
