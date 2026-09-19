@@ -77,5 +77,67 @@ class GeoAgent:
             "is_fallback": False
         }
 
+    def get_ward_by_number(self, ward_num: int) -> Optional[Dict[str, Any]]:
+        """Returns ward details for a specific ward number (1 to 32)."""
+        for ward in PCMC_WARD_CENTROIDS:
+            if ward["ward"] == ward_num:
+                return {
+                    "ward_number": ward["ward"],
+                    "ward_name": ward["name"],
+                    "zone": ward["zone"],
+                    "lat": ward["lat"],
+                    "lng": ward["lng"],
+                    "is_fallback": False
+                }
+        return None
+
+    def detect_ward_from_text(self, text: str) -> Optional[Dict[str, Any]]:
+        """Scans complaint text for PCMC landmarks or area names to dynamically resolve ward."""
+        if not text:
+            return None
+        t_lower = text.lower()
+
+        area_keywords = {
+            "चिखली": 1, "तळवडे": 1, "chikhali": 1, "talwade": 1,
+            "रुपीनगर": 2, "संभाजीनगर": 2, "rupinagar": 2, "sambhajinagar": 2,
+            "यमुनानगर": 3, "निगडी": 3, "yamunanagar": 3, "nigdi": 3,
+            "प्राधिकरण": 4, "pradhikaran": 4, "sector 24": 4, "सेक्टर २४": 4,
+            "आकुर्डी": 5, "मोहन नगर": 5, "akurdi": 5, "mohan nagar": 5,
+            "शाहूनगर": 6, "मसुळकर कॉलनी": 6, "shahunagar": 6, "masulkar": 6,
+            "मोशी": 7, "बोरहाडेवाडी": 7, "moshi": 7, "borhadewadi": 7,
+            "डुडुळगाव": 8, "चऱ्होली": 8, "dudulgaon": 8, "charholi": 8,
+            "दिघी": 9, "मॅगझिन कॉर्नर": 9, "dighi": 9, "magazine": 9,
+            "भोसरी": 10, "धावडे वस्ती": 10, "bhosari": 10, "dhavade": 10,
+            "इंद्रायणी नगर": 11, "लांडेवाडी": 11, "indrayani": 11, "landewadi": 11,
+            "एमआयडीसी": 12, "टेल्को": 12, "telco": 12, "midc bhosari": 12,
+            "नेहरूनगर": 13, "वल्लभनगर": 13, "nehrunagar": 13, "vallabhnagar": 13,
+            "संत तुकाराम नगर": 14, "वायसीएम": 14, "ycm": 14, "sant tukaram": 14,
+            "पिंपरी": 15, "मोरवाडी": 15, "pimpri": 15, "morwadi": 15,
+            "कासारवाडी": 16, "कुंदन नगर": 16, "kasarwadi": 16, "kundan nagar": 16,
+            "फुगेवाडी": 17, "दापोडी": 17, "phugewadi": 17, "dapodi": 17,
+            "पिंपळे गुरव": 18, "काटेपुरम": 18, "pimple gurav": 18, "katepuram": 18,
+            "नवी सांगवी": 20, "फेमस चौक": 20, "new sangvi": 20, "famous chowk": 20,
+            "जुनी सांगवी": 19, "शितोळे नगर": 19, "old sangvi": 19, "sangvi": 19, "सांगवी": 19,
+            "पिंपळे निलख": 21, "विशाल नगर": 21, "pimple nilakh": 21, "vishal nagar": 21,
+            "पिंपळे सौदागर": 22, "रोजलँड": 22, "pimple saudagar": 22, "roseland": 22,
+            "कोकाणे नगर": 23, "कुणाल आयकॉन": 23, "kokane nagar": 23, "kunal icon": 23,
+            "रहाटणी": 24, "राम नगर": 24, "rahatani": 24, "ram nagar": 24,
+            "वाकड": 25, "दत्त मंदिर": 25, "wakad": 25, "dutta mandir": 25,
+            "कस्पटे वस्ती": 26, "हिंजवडी": 26, "kaspate": 26, "hinjawadi": 26, "hinjewadi": 26,
+            "थेरगाव": 27, "डांगे चौक": 27, "thergaon": 27, "dange chowk": 27,
+            "काळेवाडी": 28, "विजय नगर": 28, "kalewadi": 28, "vijay nagar": 28,
+            "चिंचवड स्टेशन": 29, "आनंदनगर": 29, "chinchwad station": 29, "anandnagar": 29,
+            "चिंचवड": 30, "केशवनगर": 30, "chinchwad": 30, "chinchwadgaon": 30,
+            "वाल्हेकरवाडी": 31, "गुरव पिंपळे": 31, "walhekarwadi": 31,
+            "रावेत": 32, "किवळे": 32, "शिंदे वस्ती": 32, "ravet": 32, "kiwale": 32
+        }
+
+        for kw, wnum in area_keywords.items():
+            if kw in t_lower:
+                return self.get_ward_by_number(wnum)
+
+        return None
+
 
 geo_agent = GeoAgent()
+

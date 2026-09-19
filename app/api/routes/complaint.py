@@ -29,12 +29,15 @@ from app.orchestrator.orchestrator import orchestrator
 from app.services.notification_service import notification_service
 from app.services.ward_service import ward_service
 from app.services.conversational_service import conversational_service
+from app.services.bhashini_stt_service import bhashini_stt_service
+from app.services.bhashini_tts_service import bhashini_tts_service
 from app.config.settings import settings
 
 router = APIRouter(prefix="/complaints", tags=["Grievance Redressal"])
 
 
 @router.post("/chat")
+@router.post("/chat/complaint")
 async def chat_with_bot(
     message: Optional[str] = Form(None, description="User chat text"),
     category: Optional[str] = Form(None, description="Selected category key"),
@@ -44,16 +47,34 @@ async def chat_with_bot(
     photo: Optional[UploadFile] = File(None, description="Evidence image"),
     confirm_register: bool = Form(False, description="Confirm grievance registration"),
     action: Optional[str] = Form(None, description="Action code: chat, select_category, register"),
+    ward_number: Optional[int] = Form(None, description="Selected PCMC Ward (1-32)"),
+    voice: Optional[UploadFile] = File(None, description="Spoken voice audio (Bhashini STT)"),
+    voice_base64: Optional[str] = Form(None, description="Spoken voice base64 (Bhashini STT)"),
+    voice_reply: bool = Form(False, description="Whether to include spoken TTS audio version of the reply"),
+    language: str = Form("mr", description="Language: mr, en, hi"),
     db: Session = Depends(get_db)
 ):
     """
     Interactive Multilingual (Marathi & English) Chatbot Endpoint:
+    - Transcribes voice queries via Digital India Bhashini STT.
+    - Synthesizes spoken voice responses via Digital India Bhashini TTS when voice_reply=True.
     - Answers greetings without creating complaints.
     - Matches user language (English -> English, Marathi -> Marathi).
     - Acknowledges category clicks (e.g. Streetlight) without auto-submitting.
     - Confirms registration before saving ticket.
     - Returns single assigned worker attribution.
     """
+    # 1. Bhashini STT Voice Processing if voice audio is provided
+    if voice and voice.filename:
+        v_bytes = await voice.read()
+        stt_res = await bhashini_stt_service.transcribe_audio(v_bytes, language=language)
+        if stt_res.get("transcript"):
+            message = (message + " " + stt_res["transcript"]).strip() if message else stt_res["transcript"]
+    elif voice_base64:
+        stt_res = await bhashini_stt_service.transcribe_base64(voice_base64, language=language)
+        if stt_res.get("transcript"):
+            message = (message + " " + stt_res["transcript"]).strip() if message else stt_res["transcript"]
+
     photo_filename = None
     photo_bytes = None
 
@@ -71,8 +92,32 @@ async def chat_with_bot(
         photo_filename=photo_filename,
         photo_bytes=photo_bytes,
         confirm_register=confirm_register,
-        action=action
+        action=action,
+        ward_number=ward_number
     )
+
+    # 2. Bhashini TTS Voice Synthesis if voice_reply is requested
+    if voice_reply and result and result.get("reply"):
+        try:
+            target_lang = result.get("language") or language or "mr"
+            tts_res = await bhashini_tts_service.synthesize_speech(
+                text=result["reply"],
+                language=target_lang
+            )
+            if tts_res.get("success") and tts_res.get("audio_base64"):
+                result["audio_base64"] = tts_res["audio_base64"]
+                result["audio_format"] = tts_res.get("audio_format", "wav")
+                result["voice_reply"] = True
+            else:
+                result["audio_base64"] = None
+                result["audio_format"] = None
+                result["voice_reply"] = False
+        except Exception as tts_err:
+            import logging
+            logging.getLogger("pcms.complaint").warning(f"[VoiceReply] TTS synthesis error: {tts_err}")
+            result["audio_base64"] = None
+            result["audio_format"] = None
+            result["voice_reply"] = False
 
     return result
 
@@ -85,6 +130,7 @@ async def register_complaint(
     citizen_phone: Optional[str] = Form("9876543210", description="नागरिकाचा मोबाईल क्रमांक"),
     photo: Optional[UploadFile] = File(None, description="समस्येचा फोटो"),
     priority: Optional[str] = Form(None, description="तक्रार प्राधान्य (LOW / MEDIUM / HIGH)"),
+    ward_number: Optional[int] = Form(None, description="निवडलेला PCMC प्रभाग (1-32)"),
     db: Session = Depends(get_db)
 ):
     """
@@ -114,7 +160,8 @@ async def register_complaint(
         citizen_phone=citizen_phone,
         photo_filename=photo_filename,
         photo_bytes=photo_bytes,
-        priority=priority
+        priority=priority,
+        ward_number=ward_number
     )
 
     return result

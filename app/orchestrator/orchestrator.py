@@ -41,7 +41,9 @@ class GrievanceOrchestrator:
         citizen_phone: Optional[str] = None,
         photo_filename: Optional[str] = None,
         photo_bytes: Optional[bytes] = None,
-        priority: Optional[str] = None
+        priority: Optional[str] = None,
+        allow_duplicate_override: bool = False,
+        ward_number: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Executes end-to-end Grievance Registration Pipeline with strict Verification Gate.
@@ -67,6 +69,8 @@ class GrievanceOrchestrator:
             mod_reasons = " | ".join(moderation_eval["reasons"])
             logger.warning(f"[Orchestrator] Content Moderation violation blocked: {mod_reasons}")
             ticket_id = routing_agent.generate_ticket_id()
+            while db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first():
+                ticket_id = routing_agent.generate_ticket_id()
 
             # Record blocked grievance for security audit trail without officer dispatch
             rejected_complaint = Complaint(
@@ -156,20 +160,40 @@ class GrievanceOrchestrator:
             if evidence_valid and img_result.get("confidence", 0) > confidence:
                 confidence = img_result["confidence"]
 
-        # Step 5: Geospatial Ward Mapping
-        geo_result = geo_agent.map_coordinates_to_ward(latitude, longitude)
+        # Step 5: Dynamic Geospatial Ward Mapping (Resolved dynamically when complaint is raised)
+        if ward_number and geo_agent.get_ward_by_number(ward_number):
+            geo_result = geo_agent.get_ward_by_number(ward_number)
+            if (latitude is None or longitude is None or (latitude == 0.0 and longitude == 0.0)) and geo_result:
+                latitude = geo_result.get("lat", latitude)
+                longitude = geo_result.get("lng", longitude)
+        else:
+            text_ward = geo_agent.detect_ward_from_text(description)
+            if text_ward:
+                geo_result = text_ward
+                if (latitude is None or longitude is None or (latitude == 0.0 and longitude == 0.0)) and geo_result:
+                    latitude = geo_result.get("lat", latitude)
+                    longitude = geo_result.get("lng", longitude)
+            else:
+                geo_result = geo_agent.map_coordinates_to_ward(latitude, longitude)
+                if (latitude is None or longitude is None or (latitude == 0.0 and longitude == 0.0)) and geo_result:
+                    latitude = geo_result.get("lat", latitude)
+                    longitude = geo_result.get("lng", longitude)
+
         ward_number = geo_result["ward_number"]
 
         # Step 6: Duplicate / Repeat Complaint Check
         is_duplicate = False
-        existing_match = duplicate_service.find_matching_complaint(
-            db=db,
-            category=detected_category,
-            latitude=latitude,
-            longitude=longitude,
-            citizen_phone=citizen_phone,
-            ward_number=ward_number
-        )
+        existing_match = None
+        if not allow_duplicate_override:
+            existing_match = duplicate_service.find_matching_complaint(
+                db=db,
+                category=detected_category,
+                latitude=latitude,
+                longitude=longitude,
+                citizen_phone=citizen_phone,
+                ward_number=ward_number,
+                description=description
+            )
 
         if existing_match:
             is_duplicate = True
@@ -244,6 +268,8 @@ class GrievanceOrchestrator:
         # Step 9: Department & Dynamic SLA Routing
         routing_info = routing_agent.route_complaint(detected_category)
         ticket_id = routing_agent.generate_ticket_id()
+        while db.query(Complaint).filter(Complaint.ticket_id == ticket_id).first():
+            ticket_id = routing_agent.generate_ticket_id()
 
         schedule = severity_agent.get_escalation_schedule(
             priority=determined_priority,
@@ -357,6 +383,11 @@ class GrievanceOrchestrator:
             "fraud_score": fraud_score,
             "evidence_valid": evidence_valid,
             "ward": complaint.ward_number,
+            "ward_number": complaint.ward_number,
+            "ward_name": geo_result.get("ward_name", f"Ward {complaint.ward_number}"),
+            "zone": geo_result.get("zone", ""),
+            "latitude": complaint.latitude,
+            "longitude": complaint.longitude,
             "assigned_department": complaint.assigned_department,
             "department_name_mr": routing_info["department_name_mr"],
             "sla_hours": complaint.sla_hours,

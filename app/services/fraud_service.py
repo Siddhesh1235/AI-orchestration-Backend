@@ -16,8 +16,11 @@ from app.database.models import Complaint, ComplaintStatus
 
 logger = logging.getLogger("pcms.duplicate_service")
 
-# Approximate 100-meter threshold in GPS coordinate degrees (~0.0009 deg)
-PROXIMITY_THRESHOLD_DEG = 0.0010
+# Approximate 50-meter threshold in GPS coordinate degrees (~0.0006 deg)
+PROXIMITY_THRESHOLD_DEG = 0.0006
+
+# Generic or placeholder phones used during testing that should never trigger whole-ward blocking
+GENERIC_TEST_PHONES = {"anonymous", "9876543210", "9999999999", "0000000000", "none", "", "test", "citizen"}
 
 
 class DuplicateService:
@@ -28,34 +31,32 @@ class DuplicateService:
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
         citizen_phone: Optional[str] = None,
-        ward_number: Optional[int] = None
+        ward_number: Optional[int] = None,
+        description: Optional[str] = None
     ) -> Optional[Complaint]:
         """
         Detects if this issue is already registered based on:
-        1. Spatial Proximity: Same category + within 100 meters within last 7 days.
-        2. Citizen Matching: Same phone + same category + same ward within last 7 days.
+        1. Spatial Proximity: Same category + within ~50 meters within last 48 hours.
+        2. Citizen Matching: Non-generic phone + same category + matching location or identical description.
         """
         now = datetime.now(timezone.utc)
-        recent_cutoff = now - timedelta(days=7)
+        recent_cutoff = now - timedelta(days=2)  # Active 48-hour window
 
-        # Query active or recently resolved complaints (not closed) of the same category
+        # Query active complaints (not closed) of the same category
         query = db.query(Complaint).filter(
             Complaint.detected_category == category,
             Complaint.created_at >= recent_cutoff,
             Complaint.is_fraud == False,
-            Complaint.status != ComplaintStatus.CLOSED
+            Complaint.status.in_([ComplaintStatus.REGISTERED, ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS, ComplaintStatus.RESOLVED])
         )
 
         candidates = query.order_by(desc(Complaint.created_at)).all()
 
-        for cand in candidates:
-            # Case 1: Same citizen reporting identical category in same ward
-            if citizen_phone and cand.citizen_phone == citizen_phone:
-                if ward_number and cand.ward_number == ward_number:
-                    logger.info(f"[DuplicateService] Matched existing ticket {cand.ticket_id} by citizen phone & ward.")
-                    return cand
+        phone_clean = (citizen_phone or "").strip().lower()
+        is_generic_phone = phone_clean in GENERIC_TEST_PHONES or len(phone_clean) < 7
 
-            # Case 2: Spatial GPS Proximity (within ~100m)
+        for cand in candidates:
+            # Case 1: Spatial GPS Proximity (within ~50m)
             if (
                 latitude is not None and longitude is not None and
                 cand.latitude is not None and cand.longitude is not None
@@ -64,6 +65,28 @@ class DuplicateService:
                 if dist <= PROXIMITY_THRESHOLD_DEG:
                     logger.info(f"[DuplicateService] Matched existing ticket {cand.ticket_id} by GPS proximity (dist={dist:.5f}).")
                     return cand
+
+            # Case 2: Same non-generic citizen reporting identical issue (proximity or exact description)
+            if not is_generic_phone and cand.citizen_phone == citizen_phone:
+                if ward_number and cand.ward_number == ward_number:
+                    # If coordinates exist, ensure spatial closeness (do not block two distinct spots in same ward)
+                    if (
+                        latitude is not None and longitude is not None and
+                        cand.latitude is not None and cand.longitude is not None
+                    ):
+                        dist = math.sqrt((latitude - cand.latitude) ** 2 + (longitude - cand.longitude) ** 2)
+                        if dist <= PROXIMITY_THRESHOLD_DEG * 2:
+                            logger.info(f"[DuplicateService] Matched existing ticket {cand.ticket_id} by citizen phone & GPS proximity.")
+                            return cand
+                    elif description and cand.description:
+                        # If no GPS, match if description is identical or has high lexical overlap
+                        words_new = set(description.lower().split())
+                        words_cand = set(cand.description.lower().split())
+                        if words_new and words_cand:
+                            overlap = len(words_new.intersection(words_cand)) / max(len(words_new), 1)
+                            if overlap >= 0.70:
+                                logger.info(f"[DuplicateService] Matched existing ticket {cand.ticket_id} by citizen phone & description overlap ({overlap:.2f}).")
+                                return cand
 
         return None
 

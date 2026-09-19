@@ -831,7 +831,7 @@
                     </div>
                     <div class="chat-info">
                         <h2>WardMitra AI</h2>
-                        <p>Marathi NLP · Ward 19A, KDMC</p>
+                        <p>Marathi NLP · PCMC Sarathi AI</p>
                     </div>
                 </div>
                 <div class="online-pill">
@@ -848,8 +848,8 @@
             <!-- TAB 1: FEED (Screenshot 2) -->
             <div id="tabFeedView">
                 <div class="ward-banner-card">
-                    <h4>🏛️ प्रभाग कक्ष: Ward 19A (KDMC)</h4>
-                    <p>नागरी तक्रार निवारण व प्रभागनिहाय थेट सहाय्यता प्रणाली. आपल्या प्रभागातील समस्यांची तत्काळ नोंद करा.</p>
+                    <h4>🏛️ पिंपरी चिंचवड महानगरपालिका नागरी सेवा</h4>
+                    <p>सर्व ३२ प्रभागांसाठी एकात्मिक नागरी तक्रार निवारण प्रणाली. तक्रार नोंदवल्यावर अचूक प्रभाग निश्चित केला जातो.</p>
                 </div>
 
                 <!-- Empty state matching Screenshot 2: "No announcements available" -->
@@ -1028,8 +1028,8 @@
                 <div class="form-card">
                     <h4 style="color: var(--primary-navy); font-size: 0.95rem;">🏛️ महापालिका प्रभाग संपर्क</h4>
                     <div style="font-size: 0.84rem; color: #475569; display: flex; flex-direction: column; gap: 6px;">
-                        <div><strong>प्रभाग:</strong> Ward 19A, KDMC / PCMC</div>
-                        <div><strong>प्रभाग अधिकारी:</strong> श्री. राजेंद्र माने (Ward Officer)</div>
+                        <div><strong>प्रभाग:</strong> तक्रार नोंदवताना आपोआप निश्चित केला जातो (Auto-assigned)</div>
+                        <div><strong>प्रभाग कार्यालय:</strong> PCMC मध्यवर्ती नागरी सुविधा केंद्र</div>
                         <div><strong>कनिष्ठ अभियंता (Civil):</strong> Er. संदीप माने (9822100046)</div>
                         <div><strong>आरोग्य निरीक्षक (Sanitary):</strong> श्री. नितीन शिंदे (9822100047)</div>
                         <div><strong>सारथी हेल्पलाईन:</strong> 020-67333333 / 1800 233 7382</div>
@@ -1213,26 +1213,78 @@
             document.getElementById('chatAttachmentBar').style.display = 'none';
         }
 
+        let indexRecInstance = null;
+        let isIndexRecording = false;
+
         function triggerChatVoice() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const input = document.getElementById('chatInputText');
             const micBtn = document.getElementById('chatMicBtn');
 
-            if (SpeechRecognition) {
+            if (!SpeechRecognition) {
+                input.value = "वाकड चौकात खड्डा पडला आहे, कृपया लवकर काम करा.";
+                executeChatSend(false);
+                return;
+            }
+
+            if (isIndexRecording && indexRecInstance) {
+                indexRecInstance.stop();
+                return;
+            }
+
+            try {
                 const rec = new SpeechRecognition();
+                indexRecInstance = rec;
+                rec.continuous = false;
+                rec.interimResults = true;
                 rec.lang = 'mr-IN';
-                rec.start();
-                micBtn.style.background = '#dc2626';
+
+                rec.onstart = () => {
+                    isIndexRecording = true;
+                    micBtn.style.background = '#dc2626';
+                    micBtn.style.boxShadow = '0 0 12px rgba(220, 38, 38, 0.8)';
+                    input.placeholder = "🎙️ बोलत आहात... ऐकत आहे (Listening...)";
+                };
 
                 rec.onresult = (e) => {
-                    input.value = e.results[0][0].transcript;
-                    micBtn.style.background = '#0b3b64';
+                    let finalT = '';
+                    let interimT = '';
+                    for (let i = e.resultIndex; i < e.results.length; ++i) {
+                        if (e.results[i].isFinal) finalT += e.results[i][0].transcript;
+                        else interimT += e.results[i][0].transcript;
+                    }
+                    if (interimT) input.value = interimT;
+                    if (finalT) input.value = finalT;
                 };
-                rec.onerror = () => { micBtn.style.background = '#0b3b64'; };
-                rec.onend = () => { micBtn.style.background = '#0b3b64'; };
-            } else {
-                input.value = "वाकड चौकात खड्डा पडला आहे, कृपया लवकर काम करा.";
+
+                rec.onerror = () => {
+                    stopIndexRecording();
+                };
+
+                rec.onend = () => {
+                    stopIndexRecording();
+                    const spoken = input.value.trim();
+                    if (spoken && spoken.length > 1) {
+                        executeChatSend(false);
+                    }
+                };
+
+                rec.start();
+            } catch (err) {
+                console.error("Index speech error:", err);
+                stopIndexRecording();
             }
+        }
+
+        function stopIndexRecording() {
+            isIndexRecording = false;
+            const micBtn = document.getElementById('chatMicBtn');
+            const input = document.getElementById('chatInputText');
+            if (micBtn) {
+                micBtn.style.background = '#0b3b64';
+                micBtn.style.boxShadow = 'none';
+            }
+            if (input) input.placeholder = "Type in Marathi or English...";
         }
 
         let indexCategoryKey = null;
@@ -1455,7 +1507,7 @@
                             <span class="chip-badge chip-green">${statusBadge}</span>
                         </div>
                         <div class="card-ticket-row"><span>${catLabel}</span><span style="font-weight: 600;">${data.category_name || t.detected_category || 'Civic'}</span></div>
-                        <div class="card-ticket-row"><span>${wardLabel}</span><span style="font-weight:600; color:var(--primary-navy);">Ward ${t.ward || '19A'}</span></div>
+                        <div class="card-ticket-row"><span>${wardLabel}</span><span style="font-weight:600; color:var(--primary-navy);">${(t.ward || t.ward_number) ? ('प्रभाग ' + (t.ward || t.ward_number) + (t.ward_name ? ' - ' + t.ward_name : '')) : 'PCMC Central'}</span></div>
                         <div class="card-ticket-row" style="background: #e0f2fe; padding: 4px 6px; border-radius: 6px;">
                             <span style="color: #0369a1; font-weight: 600;">${workerLabel}</span>
                             <span style="font-weight:700; color:var(--primary-navy);">👷 ${workerName}${workerContact}</span>
@@ -1528,7 +1580,8 @@
                 btn.innerText = "🚀 तक्रार सबमिट करा";
 
                 if (res.ok) {
-                    alert(`✅ तक्रार यशस्वीरीत्या नोंदवली!\nतिकीट क्र: ${data.ticket_id}\nविभाग: ${data.assigned_department}\nप्रभाग: Ward ${data.ward || '19A'}`);
+                    const wardDisp = data.ward_name ? `प्रभाग ${data.ward} (${data.ward_name})` : `प्रभाग ${data.ward || ''}`;
+                    alert(`✅ तक्रार यशस्वीरीत्या नोंदवली!\nतिकीट क्र: ${data.ticket_id}\nविभाग: ${data.assigned_department}\nप्रभाग: ${wardDisp}`);
                     document.getElementById('formDesc').value = '';
                     formPhotoFile = null;
                     document.getElementById('formPreviewImg').style.display = 'none';
@@ -1562,7 +1615,7 @@
                     document.getElementById('tktNum').innerText = data.ticket_id;
                     document.getElementById('tktCategory').innerText = `${data.detected_category} (${data.assigned_department})`;
                     document.getElementById('tktStatusBadge').innerText = data.status;
-                    document.getElementById('tktWard').innerText = `Ward ${data.ward_number || '19A, KDMC'}`;
+                    document.getElementById('tktWard').innerText = data.ward_name ? `प्रभाग ${data.ward_number || data.ward} (${data.ward_name})` : `प्रभाग ${data.ward_number || data.ward || '-'}`;
                     document.getElementById('tktWorker').innerText = `${data.assigned_worker_name || 'कनिष्ठ अभियंता'} (${data.assigned_worker_contact || ''})`;
                     document.getElementById('tktSla').innerText = `${data.sla_hours} तास (Hours)`;
 

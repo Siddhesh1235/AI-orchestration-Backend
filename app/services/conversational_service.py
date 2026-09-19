@@ -20,7 +20,9 @@ from app.agents.nlp_agent import nlp_agent
 from app.agents.image_agent import image_agent
 from app.agents.routing_agent import routing_agent
 from app.database.models import Complaint
+from app.agents.geo_agent import geo_agent
 from app.clients.llm_client import llm_client
+from app.services.human_persona_service import human_persona_service
 from app.rules.category_rules import (
     is_ambiguous_light_complaint,
     get_light_clarification_prompt,
@@ -49,7 +51,11 @@ CATEGORY_DISPLAY_NAMES = {
     "noise_pollution": {"en": "Noise Pollution", "mr": "ध्वनी प्रदूषण"},
     "encroachment": {"en": "Footpath Encroachment", "mr": "अतिक्रमण"},
     "electricity": {"en": "Electric Hazard / DP", "mr": "विद्युत धोका / डीपी"},
-    "unauthorized_banner_flex": {"en": "Illegal Banners & Flex", "mr": "अनधिकृत फ्लेक्स व बॅनर"}
+    "unauthorized_banner_flex": {"en": "Illegal Banners & Flex", "mr": "अनधिकृत फ्लेक्स व बॅनर"},
+    "banners_flex": {"en": "Illegal Banners & Flex", "mr": "अनधिकृत फ्लेक्स व बॅनर"},
+    "health_sanitation": {"en": "Garbage & Sanitation", "mr": "आरोग्य व स्वच्छता"},
+    "pipelinedefects": {"en": "Water Pipeline Leakage", "mr": "पाणी गळती व पुरवठा"},
+    "road_incidents_traffic": {"en": "Traffic & Road Incidents", "mr": "वाहतूक कोंडी व रस्ता समस्या"}
 }
 
 
@@ -88,12 +94,28 @@ class ConversationalService:
                 return candidate.capitalize()
         return None
 
+    def extract_name_introduction(self, text: str) -> Optional[str]:
+        """Detects if user is introducing their name (e.g. 'माझं नाव राहुल आहे', 'my name is Rahul')."""
+        cleaned = text.strip()
+        patterns = [
+            r'(?:माझं|माझे)\s*नाव\s*([A-Za-z\u0900-\u097F]+)(?:\s*आहे)?',
+            r'\bmy\s*name\s*is\s*([A-Za-z]+)\b',
+            r'\bi\s*am\s*([A-Za-z]+)\b'
+        ]
+        for pat in patterns:
+            m = re.search(pat, cleaned, re.IGNORECASE)
+            if m:
+                cand = m.group(1).strip()
+                if cand.lower() not in {"a", "an", "the", "fine", "good", "okay", "here", "citizen", "नागरिक", "वॉर्डमित्र", "sarathi"}:
+                    return cand.capitalize()
+        return None
+
     def is_smalltalk_or_gratitude(self, text: str) -> bool:
         """Checks if message is gratitude, acknowledgement, or goodbye."""
         cleaned = text.strip().lower()
         patterns = [
-            r"\b(thank\s*you|thanks|thx|dhanyavad|धन्यवाद|आभार)\b",
-            r"^(ok|okay|fine|alright|cool|छान|बरं|ठीक\s*आहे|हो|bye|goodbye|टाटा)[\s!\.]*$"
+            r"\b(thank\s*you|thanks|thx|dhanyavad|धन्यवाद|आभार|थँक्यू|थँक्स|थॅन्क्स)\b",
+            r"^(ok|okay|fine|alright|cool|छान|बरं|ठीक\s*आहे|bye|goodbye|टाटा|अलविदा)[\s!\.]*$"
         ]
         return any(re.search(p, cleaned) for p in patterns)
 
@@ -101,8 +123,9 @@ class ConversationalService:
         """Checks if message is inquiring about bot identity or asking how to use the system."""
         cleaned = text.strip().lower()
         patterns = [
-            r"\b(who\s*are\s*you|what\s*is\s*your\s*name|what\s*can\s*you\s*do|what\s*do\s*you\s*do|help\s*me|how\s*to\s*use)\b",
-            r"\b(तुम्ही\s*कोण\s*आहात|तुमचं\s*नाव\s*काय|काय\s*करू\s*शकता|मदत|माहिती\s*द्या)\b"
+            r"\b(who\s*are\s*(?:you|u)|what\s*is\s*your\s*name|what\s*can\s*you\s*do|what\s*do\s*you\s*do|help\s*me|how\s*to\s*use)\b",
+            r"(?:तू\s*कोण\s*आहेस|तू\s*कोण|तुम्ही\s*कोण\s*आहात|तुम्ही\s*कोण|तुझं\s*नाव\s*काय|तुमचं\s*नाव\s*काय|तू\s*काय\s*करतोस|काय\s*करू\s*शकता|मदत\s*करा|माहिती\s*द्या)",
+            r"\b(tu\s*kon\s*ahes|tu\s*kon|tumhi\s*kon\s*ahat|tuz\s*nav\s*kay)\b"
         ]
         return any(re.search(p, cleaned) for p in patterns)
 
@@ -119,23 +142,46 @@ class ConversationalService:
             r'\b(?:what\s+is\s+the\s+process|registration\s+process|complaint\s+process|steps\s+to\s+register|how\s+does\s+this\s+work)\b',
             r'\b(?:procedure|steps|guide|help)\s+.*?\b(?:register|file|complaint|grievance)\b',
             r'(?:तक्रार\s+कशी|कशी\s+तक्रार|कशी\s+नोंदवा|कशी\s+करायची|कशी\s+करावी|नोंदवण्याची\s+पद्धत|नोंदणी\s+कशी|प्रक्रिया|पायऱ्या|माहिती\s+द्या|कशी\s+नोंदवू)',
-            r'(?:मला\s+तक्रार\s+करायची|तक्रार\s+नोंदवायची\s+आहे|कम्प्लेंट\s+कशी|कम्प्लेंट\s+करायची|तक्रार\s+द्यायची)',
+            r'(?:मला\s+(?:एक\s+)?(?:तक्रार|कम्प्लेंट)|तक्रार\s+(?:नोंदवायची|करायची|द्यायची|दाखल\s+करायची)|कम्प्लेंट\s+(?:कशी|करायची|नोंदवायची)|नवीन\s+तक्रार\s+करायची)',
+            r'\bi\s+(?:want|need|wish)\s+to\s+(?:register|file|lodge|raise|submit|make)\s+(?:a\s+)?(?:complaint|grievance|ticket)\b',
             r'\b(?:takrar\s+kashi|kashi\s+takrar|process\s+sanga|step\s*by\s*step|kashi\s+karaychi)\b'
         ]
         return any(re.search(p, cleaned) for p in patterns)
 
     def is_registration_intent(self, text: str, action: Optional[str] = None, confirm_register: bool = False) -> bool:
-        """Determines if user explicitly confirmed grievance registration."""
-        if confirm_register or action == "register":
+        """
+        Determines if user explicitly confirmed grievance registration.
+        CRITICAL: Never matches on inquiries like 'मला तक्रार करायची आहे' or single words within other words (e.g. 'होता', 'करायची')!
+        """
+        if confirm_register or action in ["register", "register_new", "force_register"]:
             return True
 
-        t_lower = text.lower()
-        registration_triggers = [
+        t_clean = (text or "").lower().strip()
+        if not t_clean:
+            return False
+
+        # If user is inquiring how to file, that is NOT registration intent!
+        if self.is_complaint_process_inquiry(t_clean):
+            return False
+
+        explicit_phrases = [
             "register complaint", "raise complaint", "file complaint", "lodge complaint",
-            "तक्रार नोंदवा", "तक्रार दाखल करा", "नोंदणी करा", "तक्रार सबमिट करा", "तक्रार करा",
-            "takrar nondva", "takrar dakhala", "takrar kara", "register ticket", "book complaint"
+            "तक्रार नोंदवा", "तक्रार दाखल करा", "नोंदणी करा", "तक्रार सबमिट करा", "नोंदणी पूर्ण करा",
+            "takrar nondva", "takrar dakhala", "register ticket", "book complaint",
+            "please fix", "action ghyava", "okay register", "yes please register"
         ]
-        return any(trig in t_lower for trig in registration_triggers)
+        if any(phrase in t_clean for phrase in explicit_phrases):
+            return True
+
+        # Short affirmative words - whole word match only
+        words = re.findall(r'[\w\u0900-\u097F]+', t_clean)
+        affirmative_words = {"हो", "होय", "yes", "yep", "sure", "करा", "नोंदवा", "submit", "register", "urgent", "proceed"}
+        if any(w in affirmative_words for w in words):
+            # Only trigger if the message is a concise confirmation (<= 3 words), or explicitly contains 'नोंदवा'/'register'/'submit'
+            if len(words) <= 3 or any(w in ["नोंदवा", "register", "submit"] for w in words):
+                return True
+
+        return False
 
     def is_tracking_intent(self, text: str) -> Optional[str]:
         """Checks if user wants to track a ticket and extracts ticket ID if available."""
@@ -160,7 +206,8 @@ class ConversationalService:
         photo_filename: Optional[str] = None,
         photo_bytes: Optional[bytes] = None,
         confirm_register: bool = False,
-        action: Optional[str] = None
+        action: Optional[str] = None,
+        ward_number: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Main conversation controller fulfilling WardMitra AI municipal requirements.
@@ -185,41 +232,47 @@ class ConversationalService:
                 "action_prompt": "specify_language"
             }
 
-        # 1. Greetings (Do NOT create complaints on greetings)
+        # 1. Greetings & Personal Introductions (Do NOT create complaints on greetings)
+        intro_name = self.extract_name_introduction(text)
+        if text and intro_name:
+            if lang == "mr":
+                reply = (
+                    f"नमस्कार {intro_name}! 👋 PCMC सारथी (वॉर्डमित्र) मध्ये आपले मनःपूर्वक स्वागत आहे.\n\n"
+                    "मी पिंपरी चिंचवड महानगरपालिकेचा अधिकृत नागरी सहाय्यक आहे. मी आज आपली काय मदत करू शकतो? "
+                    "आपण खड्डे, पथदिवे, कचरा, पाणीपुरवठा किंवा ड्रेनेज यांसारखी कोणतीही नागरी समस्या मला सांगू शकता किंवा प्रश्न विचारू शकता."
+                )
+            else:
+                reply = (
+                    f"Hello {intro_name}! 👋 Welcome to PCMC Sarathi (WardMitra AI).\n\n"
+                    "I am the official civic assistant for Pimpri Chinchwad Municipal Corporation. How can I assist you today? "
+                    "You can report civic issues like potholes, streetlights, garbage, water supply, or drainage, or ask about municipal services."
+                )
+            return {
+                "reply": reply,
+                "intent": "GREETING",
+                "language": lang,
+                "category": None,
+                "category_name": None,
+                "ticket_data": None,
+                "action_prompt": "select_or_describe"
+            }
+
         if text and self.is_greeting(text):
             name_token = self.extract_greeting_name(text)
-
-            # Try LLM for natural, conversational greeting
-            llm_reply = None
-            try:
-                prompt = (
-                    f"User message: '{text}'. Respond naturally, warmly, and politely in {'Marathi' if lang == 'mr' else 'English'}. "
-                    f"{f'Acknowledge them as {name_token}. ' if name_token else ''}"
-                    "You are WardMitra AI, the digital assistant for Pimpri Chinchwad Municipal Corporation (PCMC / Ward 19A). "
-                    "Briefly ask how you can help them with civic issues like streetlights, potholes, water supply, garbage, or drainage. "
-                    "Keep it concise (2-3 sentences)."
+            if lang == "mr":
+                salutation = f"नमस्कार {name_token}! 👋" if name_token else "नमस्कार! 👋"
+                reply = (
+                    f"{salutation} मी PCMC सारथी / वॉर्डमित्र AI सहाय्यक आहे.\n\n"
+                    "मी पिंपरी चिंचवड मधील रस्ते, पथदिवे, कचरा, ड्रेनेज, पाणी पुरवठा अशा नागरी समस्या सोडवण्यात मदत करतो. "
+                    "मी आज आपली काय मदत करू शकतो?"
                 )
-                llm_reply = llm_client.generate(prompt=prompt, system_prompt="You are WardMitra AI, a polite, helpful municipal chatbot for PCMC.")
-            except Exception as e:
-                logger.warning(f"[Conversational] LLM greeting generation failed: {e}")
-
-            if llm_reply and len(llm_reply.strip()) > 15:
-                reply = llm_reply.strip()
             else:
-                if lang == "mr":
-                    salutation = f"नमस्कार {name_token}! 👋" if name_token else "नमस्कार! 👋"
-                    reply = (
-                        f"{salutation} मी PCMC सारथी / वॉर्डमित्र AI सहाय्यक आहे.\n"
-                        "मी पिंपरी चिंचवड मधील रस्ते, पथदिवे, कचरा, ड्रेनेज, पाणी पुरवठा अशा नागरी समस्या सोडवण्यात मदत करतो. "
-                        "मी आज आपली काय मदत करू शकतो?"
-                    )
-                else:
-                    salutation = f"Hello {name_token}! 👋" if name_token else "Hello! 👋"
-                    reply = (
-                        f"{salutation} Welcome to WardMitra AI (PCMC Sarathi).\n"
-                        "I can help you report and track civic issues such as potholes, streetlights, garbage, drainage, or water supply in your area. "
-                        "How can I assist you today?"
-                    )
+                salutation = f"Hello {name_token}! 👋" if name_token else "Hello! 👋"
+                reply = (
+                    f"{salutation} Welcome to WardMitra AI (PCMC Sarathi).\n\n"
+                    "I can help you report and track civic issues such as potholes, streetlights, garbage, drainage, or water supply in your area. "
+                    "How can I assist you today?"
+                )
             return {
                 "reply": reply,
                 "intent": "GREETING",
@@ -231,7 +284,7 @@ class ConversationalService:
             }
 
         # 1.1 Smalltalk / Gratitude
-        if text and self.is_smalltalk_or_gratitude(text):
+        if text and self.is_smalltalk_or_gratitude(text) and not confirm_register:
             if lang == "mr":
                 reply = "आपले स्वागत आहे! पिंपरी चिंचवड परिसरातील कोणत्याही नागरी समस्येसाठी कधीही संपर्क करा. मी सदैव सेवेत आहे."
             else:
@@ -330,6 +383,19 @@ class ConversationalService:
                 "action_prompt": "select_category_or_describe"
             }
 
+        # 1.4 PCMC Civic Knowledge Base & Municipal Inquiries (Birth/Death Certificates, Tax, Water, Waste, Helplines, Hospitals, Wards)
+        kb_answer = human_persona_service.find_knowledge_answer(text, lang)
+        if kb_answer:
+            return {
+                "reply": kb_answer,
+                "intent": "CIVIC_KNOWLEDGE_INQUIRY",
+                "language": lang,
+                "category": None,
+                "category_name": None,
+                "ticket_data": None,
+                "action_prompt": "ask_more_or_register"
+            }
+
         # 2. Tracking Requests
         ticket_id_found = self.is_tracking_intent(text)
         if ticket_id_found and ticket_id_found != "UNKNOWN":
@@ -337,12 +403,17 @@ class ConversationalService:
             if complaint:
                 worker_str = complaint.assigned_worker_name or "Ward Field Engineer"
                 worker_contact = f" ({complaint.assigned_worker_contact})" if complaint.assigned_worker_contact else ""
+                ward_display = f"प्रभाग {complaint.ward_number}" if complaint.ward_number else "निश्चित केले नाही"
+                ward_info = geo_agent.get_ward_by_number(complaint.ward_number) if complaint.ward_number else None
+                if ward_info:
+                    ward_display = f"प्रभाग {ward_info['ward_number']}: {ward_info['ward_name']} ({ward_info['zone']})"
+
                 if lang == "mr":
                     reply = (
                         f"🔍 **तक्रार स्थिती: {complaint.ticket_id}**\n"
                         f"• स्थिती: {complaint.status.value}\n"
                         f"• वर्ग: {complaint.detected_category}\n"
-                        f"• प्रभाग: Ward {complaint.ward_number or '19A'}\n"
+                        f"• प्रभाग: {ward_display}\n"
                         f"• नियुक्त कामगार: {worker_str}{worker_contact}\n"
                         f"• मुदत (SLA): {complaint.sla_hours} तास"
                     )
@@ -351,7 +422,7 @@ class ConversationalService:
                         f"🔍 **Complaint Status: {complaint.ticket_id}**\n"
                         f"• Status: {complaint.status.value}\n"
                         f"• Category: {complaint.detected_category}\n"
-                        f"• Ward: Ward {complaint.ward_number or '19A'}\n"
+                        f"• Ward: {ward_display}\n"
                         f"• Assigned Worker: {worker_str}{worker_contact}\n"
                         f"• SLA Duration: {complaint.sla_hours} Hours"
                     )
@@ -489,8 +560,12 @@ class ConversationalService:
         user_wants_registration = self.is_registration_intent(text, action, confirm_register) or bool(photo_bytes)
         if user_wants_registration and (text or photo_bytes):
             final_cat = detected_category or "pothole"
-            final_desc = text if text else f"Grievance regarding {cat_info['en']}"
+            if len(text.strip()) < 5 or text.lower().strip() in ["हो", "होय", "yes", "yep", "sure", "करा", "नोंदवा", "submit", "register", "urgent", "proceed"]:
+                final_desc = f"पिंपरी चिंचवड परिसरातील {cat_name_current} संदर्भात नागरी तक्रार." if lang == "mr" else f"Civic grievance regarding {cat_info['en']} in PCMC area."
+            else:
+                final_desc = text
 
+            allow_dup_override = action in ["register_new", "force_register"]
             reg_result = orchestrator.process_registration(
                 db=db,
                 description=final_desc,
@@ -498,12 +573,33 @@ class ConversationalService:
                 longitude=longitude,
                 citizen_phone=citizen_phone,
                 photo_filename=photo_filename,
-                photo_bytes=photo_bytes
+                photo_bytes=photo_bytes,
+                allow_duplicate_override=allow_dup_override,
+                ward_number=ward_number
             )
 
             # Check duplicate / moderation rejection
             if reg_result.get("is_duplicate"):
-                reply = reg_result.get("message")
+                existing_tid = reg_result.get("ticket_id")
+                repeat_cnt = reg_result.get("repeat_count", 1)
+                if lang == "mr":
+                    reply = (
+                        f"⚠️ **या समस्येबाबत या परिसरात आधीच तक्रार नोंदवलेली आहे:**\n\n"
+                        f"• **तिकीट क्र:** {existing_tid}\n"
+                        f"• **श्रेणी:** {cat_name_current}\n"
+                        f"• **स्थिती:** {reg_result.get('status')}\n"
+                        f"• **नागरिक पाठबळ (Upvotes):** {repeat_cnt} तक्रारी\n\n"
+                        f"महापालिकेचे पथक यावर कार्यरत आहे. जर आपले ठिकाण किंवा समस्या वेगळी असेल, तर **'नवीन तक्रार नोंदवा'** असे सांगा."
+                    )
+                else:
+                    reply = (
+                        f"⚠️ **A complaint for this issue in this area is already active:**\n\n"
+                        f"• **Ticket ID:** {existing_tid}\n"
+                        f"• **Category:** {cat_name_current}\n"
+                        f"• **Status:** {reg_result.get('status')}\n"
+                        f"• **Citizen Reports (Upvotes):** {repeat_cnt}\n\n"
+                        f"Our municipal field staff is already assigned. If this is a different spot, reply with 'Register as new complaint'."
+                    )
                 return {
                     "reply": reply,
                     "intent": "DUPLICATE_DETECTED",
@@ -511,7 +607,7 @@ class ConversationalService:
                     "category": reg_result.get("detected_category"),
                     "category_name": cat_name_current,
                     "ticket_data": reg_result,
-                    "action_prompt": "track"
+                    "action_prompt": "track_or_register_new"
                 }
 
             if reg_result.get("moderation_status") == "REJECTED" or reg_result.get("is_fraud"):
@@ -548,14 +644,36 @@ class ConversationalService:
                         f"A municipal officer will review the evidence and proceed with dispatch."
                     )
             else:
+                w_num = reg_result.get('ward') or reg_result.get('ward_number')
+                w_name = reg_result.get('ward_name', '')
+                w_zone = reg_result.get('zone', '')
+                c_lat = reg_result.get('latitude') or latitude
+                c_lng = reg_result.get('longitude') or longitude
+
+                ward_text_mr = f"प्रभाग {w_num}" if w_num else "PCMC मध्यवर्ती"
+                if w_name:
+                    ward_text_mr += f" - {w_name}"
+                if w_zone:
+                    ward_text_mr += f" ({w_zone})"
+
+                ward_text_en = f"Ward {w_num}" if w_num else "PCMC Central"
+                if w_name:
+                    ward_text_en += f" - {w_name}"
+                if w_zone:
+                    ward_text_en += f" ({w_zone})"
+
+                loc_text_mr = f"अक्षांश {c_lat:.4f}, रेखांश {c_lng:.4f}" if (c_lat and c_lng) else "स्थान निश्चित"
+                loc_text_en = f"Lat {c_lat:.4f}, Lng {c_lng:.4f}" if (c_lat and c_lng) else "Location Resolved"
+
                 if lang == "mr":
                     reply = (
                         f"🎉 **आपली तक्रार यशस्वीरित्या नोंदवली गेली आहे!**\n\n"
                         f"• **तिकीट क्र:** {reg_result['ticket_id']}\n"
                         f"• **श्रेणी:** {cat_name_current}\n"
-                        f"• **प्रभाग:** Ward {reg_result.get('ward') or '19A'}\n"
-                        f"• **नेमलेले कामगार:** {worker_name} ({worker_contact})\n"
-                        f"• **निकालाची मुदत (SLA):** {reg_result.get('sla_hours', 24)} तास\n\n"
+                        f"• **🏛️ प्रभाग (Ward):** {ward_text_mr}\n"
+                        f"• **📍 GPS स्थान (Location):** {loc_text_mr}\n"
+                        f"• **👷 नेमलेले क्षेत्रीय कामगार:** {worker_name} ({worker_contact})\n"
+                        f"• **⏱️ निकालाची मुदत (SLA):** {reg_result.get('sla_hours', 24)} तास\n\n"
                         f"कामगार लवकरच समस्येचे निवारण करतील."
                     )
                 else:
@@ -563,9 +681,10 @@ class ConversationalService:
                         f"🎉 **Your complaint has been successfully registered!**\n\n"
                         f"• **Ticket ID:** {reg_result['ticket_id']}\n"
                         f"• **Category:** {cat_name_current}\n"
-                        f"• **Ward:** Ward {reg_result.get('ward') or '19A'}\n"
-                        f"• **Assigned Worker:** {worker_name} ({worker_contact})\n"
-                        f"• **Resolution Deadline (SLA):** {reg_result.get('sla_hours', 24)} Hours\n\n"
+                        f"• **🏛️ Ward:** {ward_text_en}\n"
+                        f"• **📍 GPS Location:** {loc_text_en}\n"
+                        f"• **👷 Assigned Worker:** {worker_name} ({worker_contact})\n"
+                        f"• **⏱️ Resolution Deadline (SLA):** {reg_result.get('sla_hours', 24)} Hours\n\n"
                         f"The assigned worker has been dispatched."
                     )
 
@@ -579,36 +698,9 @@ class ConversationalService:
                 "action_prompt": "track"
             }
 
-        # 8. Natural Conversational Response (Follows user language strictly)
+        # 8. Natural Conversational Response (Warm human-like municipal persona answering citizen questions)
         if not detected_category:
-            # If no civic category was matched, respond naturally instead of forcing a fake grievance!
-            llm_reply = None
-            try:
-                prompt = (
-                    f"Citizen message: '{text}'. Respond naturally, warmly, and helpfully in {'Marathi' if lang == 'mr' else 'English'}. "
-                    "You are WardMitra AI, the digital assistant for Pimpri Chinchwad Municipal Corporation (PCMC / Ward 19A). "
-                    "Help answer their inquiry concisely (2-3 sentences), and remind them they can report civic issues "
-                    "like streetlights, potholes, garbage, water supply, or drainage if needed."
-                )
-                llm_reply = llm_client.generate(prompt=prompt, system_prompt="You are WardMitra AI, a polite, helpful municipal assistant for PCMC.")
-            except Exception as e:
-                logger.warning(f"[Conversational] LLM conversation generation failed: {e}")
-
-            if llm_reply and len(llm_reply.strip()) > 15:
-                reply = llm_reply.strip()
-            else:
-                if lang == "mr":
-                    reply = (
-                        "मी वॉर्डमित्र AI आहे, पिंपरी चिंचवड महानगरपालिकेचा आपला डिजिटल सहाय्यक. "
-                        "मी रस्ते, खड्डे, पथदिवे, कचरा, पाणीपुरवठा किंवा ड्रेनेज अशा नागरी समस्या सोडवण्यात मदत करू शकतो. "
-                        "मी आज आपली काय मदत करू?"
-                    )
-                else:
-                    reply = (
-                        "I am WardMitra AI, your digital assistant for PCMC. "
-                        "I can help you report and track municipal issues such as streetlights, potholes, garbage, water supply, or drainage. "
-                        "How can I assist you with your neighborhood today?"
-                    )
+            reply = human_persona_service.generate_human_response(text, lang)
             return {
                 "reply": reply,
                 "intent": "CONVERSATIONAL",
@@ -620,16 +712,32 @@ class ConversationalService:
             }
 
         # If a civic grievance category WAS legitimately detected:
-        if lang == "mr":
-            reply = (
-                f"मी समजलो. आपली तक्रार **{cat_name_current}** संदर्भातील आहे. "
-                "कृपया समस्येचे अधिक वर्णन करा किंवा छायाचित्र जोडा जेणेकरून आम्ही तक्रार नोंदवू शकू."
-            )
-        else:
-            reply = (
-                f"Understood. Your issue relates to **{cat_name_current}**. "
-                "Please describe the specific issue or attach a photo so we can verify and register your complaint."
-            )
+        has_location_clue = any(loc in t_clean for loc in [
+            "road", "street", "chowk", "nagar", "colony", "sector", "lane", "near", "opposite", "area", "ward",
+            "रस्ता", "चौक", "नगर", "कॉलनी", "सेक्टर", "गल्ली", "जवळ", "समोर", "परिसर", "प्रभाग", "गाव"
+        ])
+        has_substantive_desc = len(t_clean) > 20 or has_location_clue
+
+        detected_ward = geo_agent.detect_ward_from_text(text)
+        if not detected_ward and latitude and longitude and (latitude != 0.0 or longitude != 0.0):
+            geo_map = geo_agent.map_coordinates_to_ward(latitude, longitude)
+            if not geo_map.get("is_fallback"):
+                detected_ward = geo_map
+
+        ward_label = None
+        if detected_ward:
+            z_str = f" ({detected_ward['zone']})" if detected_ward.get('zone') else ""
+            ward_label = f"प्रभाग {detected_ward['ward_number']} - {detected_ward['ward_name']}{z_str}"
+
+        reply = human_persona_service.generate_grievance_dialogue(
+            text=text,
+            category=detected_category or "pothole",
+            category_name=cat_name_current,
+            has_substantive_desc=has_substantive_desc,
+            lang=lang,
+            detected_ward_name=ward_label
+        )
+        action_prompt = "confirm_register" if has_substantive_desc else "specify_location_and_details"
 
         return {
             "reply": reply,
@@ -638,7 +746,7 @@ class ConversationalService:
             "category": detected_category,
             "category_name": cat_name_current,
             "ticket_data": None,
-            "action_prompt": "describe_or_photo"
+            "action_prompt": action_prompt
         }
 
 

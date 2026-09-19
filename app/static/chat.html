@@ -700,6 +700,36 @@
             color: #94a3b8;
             margin-top: 2px;
         }
+
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); transform: scale(1); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); transform: scale(1.08); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); transform: scale(1); }
+        }
+        .mic-recording {
+            background: #dc2626 !important;
+            animation: pulse-red 1.2s infinite !important;
+            color: white !important;
+        }
+        .listen-status-badge {
+            position: absolute;
+            bottom: 64px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #dc2626;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.5);
+            z-index: 99;
+            animation: pulse-red 1.5s infinite;
+        }
     </style>
 </head>
 <body>
@@ -731,7 +761,7 @@
                 </div>
                 <div class="header-info">
                     <h2 id="headerTitle">WardMitra AI</h2>
-                    <p id="headerSubtitle">Marathi NLP · Ward 19A, KDMC</p>
+                    <p id="headerSubtitle">PCMC Sarathi · Pimpri Chinchwad</p>
                 </div>
             </div>
             <div class="online-pill" id="headerOnlinePill">
@@ -789,6 +819,12 @@
                 <button class="remove-img-btn" onclick="clearAttachedPhoto()">✕</button>
             </div>
 
+            <!-- Listening Status Badge for Voice (Bhashini STT) -->
+            <div class="listen-status-badge" id="listenStatusBadge">
+                <span style="font-size: 1rem;">🎙️</span>
+                <span>भाषिणी AI ऐकत आहे (Listening with Bhashini STT...)</span>
+            </div>
+
             <!-- 6. Bottom Input Bar -->
             <div class="chat-input-bar">
                 <button class="icon-btn" onclick="triggerCamera()" title="Upload Photo">
@@ -796,15 +832,18 @@
                 </button>
                 <input type="file" id="hiddenPhotoInput" accept="image/*" onchange="onPhotoSelected(event)">
 
-                <button class="icon-btn" onclick="triggerVoice()" id="micBtn" title="Voice Input">
+                <button class="icon-btn" onclick="triggerVoice()" id="micBtn" title="Bhashini Voice Input (STT)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
                 </button>
 
-                <input type="text" class="msg-input" id="messageInput" placeholder="Your Message" onkeydown="handleKeyDown(event)">
+                <input type="text" class="msg-input" id="messageInput" placeholder="Your Message (किंवा 🎤 बोला...)" onkeydown="handleKeyDown(event)">
 
                 <button class="send-btn" onclick="sendMessage()" title="Send">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
+            </div>
+            <div style="font-size: 0.65rem; color: #94a3b8; text-align: center; margin-top: 2px; padding-bottom: 2px;">
+                🇮🇳 Powered by Digital India Bhashini STT (भाषिणी Indic ASR)
             </div>
         </div>
 
@@ -812,9 +851,9 @@
         <div id="registerScreen" class="app-screen" style="display: none; overflow-y: auto; padding: 14px; background: #eef4f8; gap: 12px;">
             <!-- Informational Banner -->
             <div style="background: linear-gradient(135deg, #0b3b64, #1e40af); color: white; border-radius: 14px; padding: 14px 16px; box-shadow: 0 4px 12px rgba(11, 59, 100, 0.2);">
-                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">WARD 19A · GRIEVANCE PORTAL</div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85;">PCMC · नागरी तक्रार निवारण पोर्टल</div>
                 <h3 style="font-size: 1.05rem; font-weight: 700; margin-top: 2px;">📝 नवी तक्रार नोंदणी (Grievance Form)</h3>
-                <p style="font-size: 0.78rem; opacity: 0.9; margin-top: 2px;">चॅटबॉटमधील माहिती पुढे घेतली आहे. कृपया तपशील तपासून सबमिट करा.</p>
+                <p style="font-size: 0.78rem; opacity: 0.9; margin-top: 2px;">चॅटमधील माहिती पुढे घेतली आहे. कृपया प्रभाग निवडून सबमिट करा.</p>
             </div>
 
             <!-- Form Card -->
@@ -834,6 +873,12 @@
                 </div>
 
                 <div>
+                    <label class="form-label">परिसर / लँडमार्क (Area / Landmark - ऐच्छिक):</label>
+                    <input type="text" class="form-input-text" id="regArea" placeholder="उदा. वाकड, निगडी, भोसरी, सांगवी, पिंपरी किंवा मोकळे सोडा...">
+                    <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;" id="regWardNotice">📍 प्रभाग आधी निवडण्याची आवश्यकता नाही — तक्रार नोंदवल्यावर मजकुरावरून किंवा GPS वरून प्रभाग आपोआप निश्चित केला जाईल.</div>
+                </div>
+
+                <div>
                     <label class="form-label">तक्रारीचे सविस्तर वर्णन (Description):</label>
                     <textarea class="form-input-text" id="regDesc" rows="3" placeholder="आपल्या समस्येचे वर्णन येथे लिहा..."></textarea>
                 </div>
@@ -845,7 +890,7 @@
                         <input type="text" class="form-input-text" id="regLng" placeholder="Lng" readonly style="font-size: 0.8rem;">
                         <button class="circle-btn" type="button" onclick="refreshRegistrationGPS()" title="GPS Get">📍</button>
                     </div>
-                    <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">📍 PCMC प्रभाग 19A कार्यक्षेत्र आपोआप निर्धारित केले आहे.</div>
+                    <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;" id="regWardNotice">📍 प्रभाग निवडल्यास किंवा GPS द्वारे थेट वॉर्ड निश्चित केला जाईल.</div>
                 </div>
 
                 <div>
@@ -910,7 +955,7 @@
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.8rem; margin-top: 4px;">
                     <div><span style="color:#64748b;">वर्ग:</span> <strong id="trackCategory" style="color:#0b3b64;">Pothole</strong></div>
-                    <div><span style="color:#64748b;">प्रभाग:</span> <strong id="trackWard" style="color:#0b3b64;">Ward 19A</strong></div>
+                    <div><span style="color:#64748b;">प्रभाग:</span> <strong id="trackWard" style="color:#0b3b64;">-</strong></div>
                     <div><span style="color:#64748b;">प्राधान्य:</span> <span class="badge-pill badge-orange" id="trackPriority">P3 (Medium)</span></div>
                     <div><span style="color:#64748b;">मुदत (SLA):</span> <strong id="trackSla" style="color:#0b3b64;">24 तास</strong></div>
                 </div>
@@ -919,7 +964,7 @@
                 <div style="background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 10px; padding: 10px; font-size: 0.82rem; margin-top: 4px;">
                     <div style="font-weight: 700; color: #0b3b64; margin-bottom: 2px;">👷 नियुक्त क्षेत्रीय अधिकारी (Assigned Field Engineer):</div>
                     <div style="color: #0369a1; font-weight: 700;" id="trackWorkerName">Er. संदीप माने</div>
-                    <div style="color: #475569; font-size: 0.75rem;" id="trackWorkerContact">📞 020-67333333 (Ward 19A Engineering Cell)</div>
+                    <div style="color: #475569; font-size: 0.75rem;" id="trackWorkerContact">📞 020-67333333 (PCMC Engineering Cell)</div>
                 </div>
             </div>
 
@@ -1007,7 +1052,7 @@
                 trackingScreen.style.display = 'none';
 
                 headerTitle.innerText = 'WardMitra AI';
-                headerSubtitle.innerText = 'Marathi NLP · Ward 19A, KDMC';
+                headerSubtitle.innerText = 'PCMC Sarathi · प्रभाग १ ते ३२';
                 headerOnlinePill.style.display = 'flex';
                 topBackBtn.style.display = 'none';
                 headerAvatar.style.display = 'flex';
@@ -1019,7 +1064,7 @@
                 trackingScreen.style.display = 'none';
 
                 headerTitle.innerText = 'तक्रार नोंदणी (Register)';
-                headerSubtitle.innerText = 'प्रभाग १९A · नागरिक तक्रार कक्ष';
+                headerSubtitle.innerText = 'पिंपरी चिंचवड · नागरिक तक्रार कक्ष';
                 headerOnlinePill.style.display = 'none';
                 topBackBtn.style.display = 'flex';
                 headerAvatar.style.display = 'none';
@@ -1031,7 +1076,7 @@
                 trackingScreen.style.flexDirection = 'column';
 
                 headerTitle.innerText = 'तक्रार स्थिती (Live Track)';
-                headerSubtitle.innerText = currentActiveTicketId ? `तिकीट क्र.: ${currentActiveTicketId}` : 'Ward 19A Redressal';
+                headerSubtitle.innerText = currentActiveTicketId ? `तिकीट क्र.: ${currentActiveTicketId}` : 'PCMC Redressal';
                 headerOnlinePill.style.display = 'none';
                 topBackBtn.style.display = 'flex';
                 headerAvatar.style.display = 'none';
@@ -1074,30 +1119,233 @@
             document.getElementById('previewStrip').style.display = 'none';
         }
 
-        function triggerVoice() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        // ==========================================
+        // VOICE INPUT (BHASHINI INDIC STT - SPEECH TO TEXT)
+        // ==========================================
+        // ==========================================
+        // VOICE INPUT (BHASHINI INDIC STT - SPEECH TO TEXT)
+        // ==========================================
+        let recognitionInstance = null;
+        let mediaRecorderInstance = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let lastInputWasVoice = false;
+
+        function showVoiceToast(msg, isError = false) {
+            let toast = document.getElementById('voiceToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'voiceToast';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '80px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.padding = '8px 16px';
+                toast.style.borderRadius = '24px';
+                toast.style.fontSize = '0.8rem';
+                toast.style.fontWeight = '600';
+                toast.style.zIndex = '9999';
+                toast.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
+                toast.style.maxWidth = '90%';
+                toast.style.textAlign = 'center';
+                toast.style.transition = 'opacity 0.3s ease';
+                document.body.appendChild(toast);
+            }
+            toast.innerText = msg;
+            toast.style.background = isError ? '#dc2626' : '#0b3b64';
+            toast.style.color = '#ffffff';
+            toast.style.display = 'block';
+            toast.style.opacity = '1';
+
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => { toast.style.display = 'none'; }, 300);
+            }, isError ? 6000 : 3500);
+        }
+
+        async function triggerVoice() {
             const input = document.getElementById('messageInput');
             const micBtn = document.getElementById('micBtn');
+            const statusBadge = document.getElementById('listenStatusBadge');
 
+            // 1. If currently recording, clicking again stops and sends immediately
+            if (isRecording) {
+                stopRecordingState();
+                const spokenText = input.value.trim();
+                if (spokenText && spokenText.length > 0) {
+                    lastInputWasVoice = true;
+                    showVoiceToast("✅ मेसेज पाठवत आहे...", false);
+                    sendMessage(false);
+                } else {
+                    showVoiceToast("ℹ️ रेकॉर्डिंग थांबवले.", false);
+                }
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            // 2. Chrome / Edge / Safari / Android: Native Indic SpeechRecognition (Zero-latency Marathi STT)
             if (SpeechRecognition) {
-                const recognition = new SpeechRecognition();
-                recognition.lang = 'mr-IN'; // Marathi speech
-                recognition.start();
-                micBtn.style.background = '#dc2626';
+                try {
+                    const recognition = new SpeechRecognition();
+                    recognitionInstance = recognition;
+                    recognition.continuous = false;
+                    recognition.interimResults = true;
+                    recognition.lang = 'mr-IN'; // Marathi Primary
 
-                recognition.onresult = (event) => {
-                    const speechText = event.results[0][0].transcript;
-                    input.value = speechText;
-                    micBtn.style.background = '#0b3b64';
-                };
-                recognition.onerror = () => {
-                    micBtn.style.background = '#0b3b64';
-                };
-                recognition.onend = () => {
-                    micBtn.style.background = '#0b3b64';
-                };
+                    let recognizedAnyText = false;
+
+                    recognition.onstart = () => {
+                        isRecording = true;
+                        micBtn.classList.add('mic-recording');
+                        if (statusBadge) {
+                            statusBadge.innerHTML = '<span>🎙️</span><span>भाषिणी AI ऐकत आहे (मराठीत बोला...)</span>';
+                            statusBadge.style.display = 'flex';
+                        }
+                        input.placeholder = "🎙️ बोलत आहात... (बोलणे झाल्यावर 🎤 वर पुन्हा दाबा)";
+                        showVoiceToast("🎙️ भाषिणी AI ऐकत आहे... कृपया मराठीत बोला.", false);
+                    };
+
+                    recognition.onresult = (event) => {
+                        recognizedAnyText = true;
+                        let finalTranscript = '';
+                        let interimTranscript = '';
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            if (event.results[i].isFinal) {
+                                finalTranscript += event.results[i][0].transcript;
+                            } else {
+                                interimTranscript += event.results[i][0].transcript;
+                            }
+                        }
+                        if (interimTranscript) input.value = interimTranscript;
+                        if (finalTranscript) input.value = finalTranscript;
+                    };
+
+                    recognition.onerror = (event) => {
+                        console.warn("[Voice STT] SpeechRecognition error:", event.error);
+                        stopRecordingState();
+                        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                            showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया वर URL बारमधील 🔒 किंवा 🎙️ चिन्हावर क्लिक करून 'Allow' करा.", true);
+                            alert("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे!\n\nकृपया ब्राउझरच्या ॲड्रेस बारमध्ये वर डाव्या बाजूला असलेल्या 🔒 (किंवा 🎙️) आयकॉनवर क्लिक करा, आणि Microphone 'Allow' करून पेज रिफ्रेश करा.");
+                        } else if (event.error === 'no-speech') {
+                            showVoiceToast("⚠️ कोणताही आवाज ऐकू आला नाही. कृपया माईकजवळ स्पष्ट बोला.", true);
+                        } else if (event.error === 'audio-capture') {
+                            showVoiceToast("⚠️ मायक्रोफोन डिव्हाइस उपलब्ध नाही. माईक कनेक्शन तपासा.", true);
+                        } else if (event.error === 'network') {
+                            showVoiceToast("⚠️ इंटरनेट किंवा व्हॉईस नेटवर्क समस्या. कृपया पुन्हा प्रयत्न करा.", true);
+                        }
+                    };
+
+                    recognition.onend = () => {
+                        stopRecordingState();
+                        const spokenText = input.value.trim();
+                        if (recognizedAnyText && spokenText.length > 0) {
+                            lastInputWasVoice = true;
+                            showVoiceToast("✅ आवाज ओळखला: " + spokenText, false);
+                            setTimeout(() => {
+                                sendMessage(false);
+                            }, 500);
+                        }
+                    };
+
+                    recognition.start();
+                    return;
+                } catch (e) {
+                    console.warn("[Voice STT] SpeechRecognition failed to start, trying MediaRecorder:", e);
+                }
+            }
+
+            // 3. Fallback for Firefox or browsers without webkitSpeechRecognition: MediaRecorder -> Bhashini Endpoint
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    isRecording = true;
+                    micBtn.classList.add('mic-recording');
+                    if (statusBadge) {
+                        statusBadge.innerHTML = '<span>🎙️</span><span>भाषिणी AI रेकॉर्ड करत आहे...</span>';
+                        statusBadge.style.display = 'flex';
+                    }
+                    input.placeholder = "🎙️ रेकॉर्डिंग सुरू आहे... (थांबवण्यासाठी 🎤 वर दाबा)";
+                    showVoiceToast("🎙️ भाषिणी AI रेकॉर्ड करत आहे... थांबवण्यासाठी 🎤 दाबा.", false);
+
+                    mediaRecorderInstance = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorderInstance.ondataavailable = (e) => {
+                        if (e.data && e.data.size > 0) audioChunks.push(e.data);
+                    };
+                    mediaRecorderInstance.onstop = async () => {
+                        stream.getTracks().forEach(t => t.stop());
+                        if (audioChunks.length > 0) {
+                            showVoiceToast("⏳ भाषिणी AI आवाजाचे मजकुरात रूपांतर करत आहे...", false);
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                            await sendAudioToBhashini(audioBlob);
+                        }
+                    };
+                    mediaRecorderInstance.start();
+                } catch (recErr) {
+                    console.warn("[Voice STT] MediaRecorder error:", recErr);
+                    stopRecordingState();
+                    if (recErr.name === 'NotAllowedError' || recErr.name === 'PermissionDeniedError') {
+                        showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया ब्राउझरमध्ये 'Allow' करा.", true);
+                        alert("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे!\n\nकृपया ब्राउझरच्या ॲड्रेस बारमध्ये वर डाव्या बाजूला असलेल्या 🔒 आयकॉनवर क्लिक करून Microphone: Allow करा.");
+                    } else {
+                        showVoiceToast("⚠️ मायक्रोफोन सुरू करता आला नाही.", true);
+                    }
+                }
             } else {
-                input.value = "वाकड चौकात खड्डा पडला आहे, कृपया लवकर काम करा.";
+                showVoiceToast("⚠️ या ब्राउझरमध्ये व्हॉईस इनपुट उपलब्ध नाही. कृपया Chrome किंवा Edge वापरा.", true);
+            }
+        }
+
+        async function sendAudioToBhashini(audioBlob) {
+            const input = document.getElementById('messageInput');
+            try {
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'voice_query.webm');
+                formData.append('language', 'mr');
+                formData.append('audio_format', 'webm');
+
+                const response = await fetch('/api/v1/voice/stt', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.transcript && data.transcript.trim().length > 0) {
+                        input.value = data.transcript.trim();
+                        showVoiceToast("✅ भाषिणी STT: " + data.transcript.trim(), false);
+                    } else if (data.source === 'indic_fallback') {
+                        showVoiceToast("ℹ️ भाषिणी स्थानिक मोड सक्रिय आहे. कृपया थेट मजकूर तपासा.", false);
+                    }
+                }
+            } catch (err) {
+                console.warn("[Bhashini STT] Network request failed:", err);
+                showVoiceToast("⚠️ भाषिणी सर्व्हरशी संपर्क होऊ शकला नाही.", true);
+            }
+
+            const spokenText = input.value.trim();
+            if (spokenText && spokenText.length > 0) {
+                lastInputWasVoice = true;
+                setTimeout(() => { sendMessage(false); }, 400);
+            }
+        }
+
+        function stopRecordingState() {
+            isRecording = false;
+            const micBtn = document.getElementById('micBtn');
+            const input = document.getElementById('messageInput');
+            const statusBadge = document.getElementById('listenStatusBadge');
+            if (micBtn) micBtn.classList.remove('mic-recording');
+            if (statusBadge) statusBadge.style.display = 'none';
+            if (input) input.placeholder = "Your Message (किंवा 🎤 बोला...)";
+
+            if (recognitionInstance) {
+                try { recognitionInstance.stop(); } catch (_) {}
+                recognitionInstance = null;
+            }
+            if (mediaRecorderInstance && mediaRecorderInstance.state !== 'inactive') {
+                try { mediaRecorderInstance.stop(); } catch (_) {}
             }
         }
 
@@ -1209,8 +1457,10 @@
         }
 
         function handleBotChatResponse(data, time) {
-            if (data.intent === 'GREETING' || data.intent === 'COMPLAINT_PROCESS_GUIDE') {
-                renderBotPlainMessage(data.reply, time);
+            lastInputWasVoice = false;
+
+            if (data.intent === 'GREETING' || data.intent === 'COMPLAINT_PROCESS_GUIDE' || data.intent === 'CIVIC_KNOWLEDGE_INQUIRY') {
+                renderBotPlainMessage(data.reply, time, data.language);
             } else if (data.intent === 'CATEGORY_SELECTED' || data.intent === 'CATEGORY_CLARIFICATION_REQUIRED' || data.intent === 'EVIDENCE_REQUIRED') {
                 if (data.category) currentCategoryKey = data.category;
                 renderBotCategoryPrompt(data, time);
@@ -1224,7 +1474,7 @@
                 if (data.category) currentCategoryKey = data.category;
                 renderBotCategoryPrompt(data, time);
             } else {
-                renderBotPlainMessage(data.reply, time);
+                renderBotPlainMessage(data.reply, time, data.language);
             }
         }
 
@@ -1264,9 +1514,9 @@
                 descInput.value = defaultDescriptions[targetCat] || `${catBadge || 'नागरी समस्या'} संदर्भात तात्काळ निवारण करावे.`;
             }
 
-            // 3. Pre-fill GPS coordinates
-            latInput.value = (defaultLat || 18.6010).toFixed(4);
-            lngInput.value = (defaultLng || 73.7630).toFixed(4);
+            // 3. Pre-fill GPS coordinates only if citizen already fetched them
+            latInput.value = defaultLat ? defaultLat.toFixed(4) : '';
+            lngInput.value = defaultLng ? defaultLng.toFixed(4) : '';
 
             // 4. Pre-fill citizen phone
             phoneInput.value = (citizenEmail && citizenEmail.indexOf('@') === -1) ? citizenEmail : '9876543210';
@@ -1319,14 +1569,13 @@
                         alert(`📍 GPS लोकेशन मिळाले: ${defaultLat.toFixed(4)}, ${defaultLng.toFixed(4)}`);
                     },
                     (err) => {
-                        alert("⚠️ GPS सिग्नल मिळाला नाही. पूर्वनिर्धारित प्रभाग १९A लोकेशन वापरले.");
-                        document.getElementById('regLat').value = (defaultLat || 18.6010).toFixed(4);
-                        document.getElementById('regLng').value = (defaultLng || 73.7630).toFixed(4);
+                        alert("⚠️ GPS सिग्नल मिळाला नाही. तक्रारीमधील पत्त्यावरून किंवा वर्णनावरून प्रभाग आपोआप निश्चित केला जाईल.");
+                        document.getElementById('regLat').value = '';
+                        document.getElementById('regLng').value = '';
                     }
                 );
             } else {
-                document.getElementById('regLat').value = (defaultLat || 18.6010).toFixed(4);
-                document.getElementById('regLng').value = (defaultLng || 73.7630).toFixed(4);
+                alert("⚠️ ब्राउझरमध्ये GPS उपलब्ध नाही. वर्णनातील परिसर वापरला जाईल.");
             }
         }
 
@@ -1336,8 +1585,9 @@
         async function submitRegistrationFromForm() {
             const category = document.getElementById('regCategory').value;
             const desc = document.getElementById('regDesc').value.trim();
-            const lat = parseFloat(document.getElementById('regLat').value) || defaultLat;
-            const lng = parseFloat(document.getElementById('regLng').value) || defaultLng;
+            const area = document.getElementById('regArea') ? document.getElementById('regArea').value.trim() : '';
+            const lat = parseFloat(document.getElementById('regLat').value) || null;
+            const lng = parseFloat(document.getElementById('regLng').value) || null;
             const priority = document.getElementById('regPriority').value;
             const phone = document.getElementById('regPhone').value.trim() || '9876543210';
             const submitBtn = document.getElementById('btnSubmitRegForm');
@@ -1350,8 +1600,10 @@
             submitBtn.disabled = true;
             submitBtn.innerText = "⏳ तक्रार नोंदवत आहे (Registering)...";
 
+            const combinedDesc = area ? `${desc} [परिसर: ${area}]` : desc;
+
             const formData = new FormData();
-            formData.append('description', desc);
+            formData.append('description', combinedDesc);
             if (lat) formData.append('latitude', lat);
             if (lng) formData.append('longitude', lng);
             formData.append('citizen_phone', phone);
@@ -1414,12 +1666,15 @@
             }
 
             document.getElementById('trackCategory').innerText = ticketData.category_name_mr || ticketData.detected_category || 'Pothole';
-            document.getElementById('trackWard').innerText = `Ward ${ticketData.ward || ticketData.ward_number || '19A'}`;
+            const wNum = ticketData.ward || ticketData.ward_number;
+            const wName = ticketData.ward_name ? ` - ${ticketData.ward_name}` : '';
+            const wZone = ticketData.zone ? ` (${ticketData.zone})` : '';
+            document.getElementById('trackWard').innerText = wNum ? `प्रभाग ${wNum}${wName}${wZone}` : 'PCMC मध्यवर्ती';
             document.getElementById('trackPriority').innerText = `${ticketData.priority || 'MEDIUM'} (${ticketData.severity || 'Medium'})`;
             document.getElementById('trackSla').innerText = `${ticketData.sla_hours || 24} तास`;
 
             const workerName = ticketData.assigned_worker_name || 'Er. संदीप माने';
-            const workerContact = ticketData.assigned_worker_contact ? `📞 ${ticketData.assigned_worker_contact} (Ward 19A Cell)` : '📞 020-67333333 (Ward 19A Cell)';
+            const workerContact = ticketData.assigned_worker_contact ? `📞 ${ticketData.assigned_worker_contact}` : '📞 020-67333333 (PCMC Cell)';
             document.getElementById('trackWorkerName').innerText = workerName;
             document.getElementById('trackWorkerContact').innerText = workerContact;
 
@@ -1437,7 +1692,7 @@
         function renderTrackingTimeline(currentStatus) {
             const container = document.getElementById('trackTimelineContainer');
             const stages = [
-                { key: 'REGISTERED', title: 'तक्रार नोंदणी झाली (Grievance Registered)', desc: 'AI प्रणालीने तक्रार पडताळली, प्राधान्य आणि प्रभाग १९A निश्चित केला.' },
+                { key: 'REGISTERED', title: 'तक्रार नोंदणी झाली (Grievance Registered)', desc: 'AI प्रणालीने तक्रार पडताळली आणि संबंधित प्रभागास सोपवली.' },
                 { key: 'ASSIGNED', title: 'क्षेत्रीय अधिकारी नियुक्त (Field Officer Assigned)', desc: 'कनिष्ठ अभियंता यांच्याकडे निराकरणासाठी तिकीट सोपवण्यात आले.' },
                 { key: 'IN_PROGRESS', title: 'कार्यवाही प्रत्यक्ष सुरू (Work In Progress)', desc: 'महापालिका पथक घटनास्थळी हजर असून दुरुस्तीचे काम सुरू आहे.' },
                 { key: 'RESOLVED', title: 'समस्या निवारण पूर्ण (Resolved & Closed)', desc: 'काम पूर्ण झाले असून नागरिकांच्या पुष्टीसाठी अहवाल अपलोड केला आहे.' }
@@ -1546,7 +1801,7 @@
                 .replace(/\*(.*?)\*/g, '<em>$1</em>');
         }
 
-        function renderBotPlainMessage(msg, time) {
+        function renderBotPlainMessage(msg, time, lang = 'mr') {
             const chatBody = document.getElementById('chatBody');
             const typingRow = document.getElementById('typingRow');
 
@@ -1617,7 +1872,10 @@
             row.innerHTML = `
                 <div class="bot-icon-small">🤖</div>
                 <div class="message-bubble bot">
-                    <div class="bubble-tag">WARDMITRA AI</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                        <div class="bubble-tag">WARDMITRA AI</div>
+                        <button class="speak-bubble-btn" onclick="playBubbleSpeech(this, '${data.language || 'mr'}')" title="ऐका (Listen)">🔊</button>
+                    </div>
                     <div style="color: #0b3b64; font-weight: 700; margin-bottom: 4px;">${cardTitle}</div>
                     <div class="ticket-card">
                         <div class="ticket-header">
@@ -1630,7 +1888,11 @@
                         </div>
                         <div class="ticket-row">
                             <span>${wardLabel}</span>
-                            <span style="font-weight: 600; color: #0b3b64;">Ward ${t.ward || t.ward_number || '19A'}</span>
+                            <span style="font-weight: 600; color: #0b3b64;">${(t.ward || t.ward_number) ? ('प्रभाग ' + (t.ward || t.ward_number) + (t.ward_name ? ' - ' + t.ward_name : '') + (t.zone ? ' (' + t.zone + ')' : '')) : 'PCMC Central'}</span>
+                        </div>
+                        <div class="ticket-row">
+                            <span>${isMr ? '📍 GPS स्थान:' : '📍 GPS Location:'}</span>
+                            <span style="font-weight: 600; color: #0284c7;">${(t.latitude && t.longitude) ? ('अक्षांश ' + Number(t.latitude).toFixed(4) + ', रेखांश ' + Number(t.longitude).toFixed(4)) : ('अक्षांश ' + Number(defaultLat).toFixed(4) + ', रेखांश ' + Number(defaultLng).toFixed(4))}</span>
                         </div>
                         <div class="ticket-row" style="background: #e0f2fe; padding: 4px 6px; border-radius: 6px;">
                             <span style="color: #0369a1; font-weight: 600;">${workerLabel}</span>
@@ -1663,7 +1925,10 @@
             row.innerHTML = `
                 <div class="bot-icon-small">🤖</div>
                 <div class="message-bubble bot">
-                    <div class="bubble-tag">WARDMITRA AI</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                        <div class="bubble-tag">WARDMITRA AI</div>
+                        <button class="speak-bubble-btn" onclick="playBubbleSpeech(this, '${data.language || 'mr'}')" title="ऐका (Listen)">🔊</button>
+                    </div>
                     <div style="color: #dc2626; font-weight: 700; margin-bottom: 4px;">
                         ${isMr ? '🚫 तक्रार नाकारण्यात आली!' : '🚫 Complaint Rejected!'}
                     </div>

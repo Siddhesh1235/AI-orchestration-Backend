@@ -46,6 +46,18 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: str = "ap-south-1"
 
+    # Bhashini Indic STT / ASR & TTS Configuration
+    BHASHINI_ENABLED: bool = True
+    BHASHINI_ENDPOINT: str = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+    BHASHINI_USER_ID: Optional[str] = None
+    BHASHINI_API_KEY: Optional[str] = None
+    BHASHINI_INFERENCE_API_KEY: Optional[str] = None
+    BHASHINI_ASR_SERVICE_ID: str = "ai4bharat/conformer-multilingual-dravidian-indoaryan-gpu--gpu"
+    BHASHINI_TTS_SERVICE_ID: str = "ai4bharat/indic-tts-coqui-indoaryan-gpu--gpu"
+    BHASHINI_TTS_GENDER: str = "female"
+    BHASHINI_TTS_SAMPLING_RATE: int = 22050
+    BHASHINI_TTS_PIPELINE_ID: Optional[str] = None
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

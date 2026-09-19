@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config.settings import settings
 from app.database.session import engine, Base
 from app.database import models
-from app.api.routes import complaint, health
+from app.api.routes import complaint, health, voice
 from app.services.scheduler_service import start_auto_escalation_scheduler, stop_auto_escalation_scheduler
 
 # 1. Initialize SQLite Database Tables on startup
@@ -95,6 +95,10 @@ app.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 # 5. Include API Routers
 app.include_router(complaint.router, prefix="/api/v1")
 app.include_router(health.router, prefix="/api/v1")
+app.include_router(voice.router, prefix="/api/v1")
+
+# Direct alias for /api/v1/chat/complaint
+app.add_api_route("/api/v1/chat/complaint", complaint.chat_with_bot, methods=["POST"], tags=["Grievance Redressal"])
 
 
 # 6. Root Route -> Redirect to Citizen Mobile Chatbot UI

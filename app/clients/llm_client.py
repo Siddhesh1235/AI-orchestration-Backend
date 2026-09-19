@@ -34,8 +34,8 @@ class SmartLLMClient:
                 "system": system_prompt,
                 "stream": False,
                 "options": {
-                    "temperature": 0.1,
-                    "num_predict": 128
+                    "temperature": 0.2,
+                    "num_predict": 256
                 }
             }
             with httpx.Client(timeout=settings.OLLAMA_TIMEOUT_SECONDS) as client:
@@ -67,8 +67,8 @@ class SmartLLMClient:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
-                "temperature": 0.1,
-                "max_tokens": 128
+                "temperature": 0.2,
+                "max_tokens": 256
             }
             with httpx.Client(timeout=settings.OPENAI_TIMEOUT_SECONDS) as client:
                 resp = client.post(url, headers=headers, json=payload)
@@ -85,19 +85,22 @@ class SmartLLMClient:
 
     def generate(self, prompt: str, system_prompt: str = "") -> str:
         """
-        Executes query following Ollama-first, OpenAI-fallback architecture.
+        Executes query using Smart Hybrid LLM routing:
+        - If OPENAI_API_KEY is configured, uses OpenAI (fastest, high Marathi fluency) with Ollama fallback.
+        - If OPENAI_API_KEY is not configured, uses 100% free local Ollama instance.
         """
-        # Tier 2: Try Ollama
+        # If OpenAI key is explicitly configured, use it for ultra-fast, high-quality responses
+        if self.openai_key:
+            openai_response = self._call_openai(prompt, system_prompt)
+            if openai_response:
+                return openai_response
+            logger.info("[LLM] OpenAI unavailable or failed. Gracefully falling back to local Ollama.")
+
+        # Primary Local Ollama
         ollama_response = self._call_ollama(prompt, system_prompt)
         if ollama_response:
             return ollama_response
 
-        # Tier 3: Try OpenAI
-        openai_response = self._call_openai(prompt, system_prompt)
-        if openai_response:
-            return openai_response
-
-        # Fallback message
         return ""
 
 
