@@ -12,6 +12,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 import httpx
+from PIL import Image
 from ultralytics import YOLO
 
 try:
@@ -219,21 +220,24 @@ class ImageClassifierAgent:
             self.model = None
             self.model_mode = "none"
 
-    def _detect_night_streetlight(self, image_path: str) -> bool:
+    def _detect_night_streetlight(self, image_path: str, pil_img: Optional[Image.Image] = None) -> bool:
         """CV Heuristic: Detects night photos of lamps/streetlights via dark sky + localized bright light."""
         if not CV_AVAILABLE:
             return False
         try:
-            img = cv2.imread(image_path)
-            if img is None:
-                return False
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            if pil_img is None:
+                pil_img = Image.open(image_path).convert("RGB")
+            np_img = np.array(pil_img)
+            gray = cv2.cvtColor(np_img, cv2.COLOR_RGB2GRAY)
             mean_val = float(np.mean(gray))
             h, w = gray.shape
-            top_half = gray[:int(h * 0.6), :]
-            bright_pixels = float(np.sum(top_half > 190)) / top_half.size
-            if mean_val < 95 and bright_pixels > 0.002:
-                logger.info(f"[ImageAgent] CV Night Streetlight Detected: mean={mean_val:.1f}, bright_ratio={bright_pixels:.4f}")
+            top_half = gray[:int(h * 0.5), :]
+            bright_pixels = float(np.sum(top_half > 220)) / top_half.size
+            # Avoid mistaking wide water reflections or flood scenes for streetlights
+            bottom_half = gray[int(h * 0.5):, :]
+            bottom_bright = float(np.sum(bottom_half > 180)) / bottom_half.size
+            if mean_val < 80 and 0.0005 < bright_pixels < 0.05 and bottom_bright < 0.02:
+                logger.info(f"[ImageAgent] CV Night Streetlight Detected: mean={mean_val:.1f}, top_bright={bright_pixels:.4f}")
                 return True
         except Exception as e:
             logger.debug(f"[ImageAgent] CV heuristic error: {e}")
@@ -287,32 +291,33 @@ class ImageClassifierAgent:
     def classify_image(self, image_path: str) -> Dict[str, Any]:
         """
         Runs neural network inference on the provided image using:
-        1. Night Streetlight CV Heuristic
-        2. Ollama Moondream Vision Model
-        3. YOLO Neural Classifier (Fine-tuned best.pt or pretrained yolo11n-cls.pt)
+        1. PIL Image Normalization (handles WebP, AVIF, PNG with alpha, CMYK)
+        2. Custom Fine-Tuned YOLO Classifier with Top-3 Candidate Extraction
+        3. Night Streetlight CV Heuristic (safe fallback)
+        4. Ollama Moondream Vision Model
+        5. Pretrained YOLO Classifier
         """
         if not os.path.exists(image_path):
             return {
                 "category": "garbage",
                 "confidence": 0.70,
                 "model_mode": "fallback_default",
-                "is_pretrained": True
+                "is_pretrained": True,
+                "top3_candidates": []
             }
 
-        # Stage 1: Nighttime Streetlight CV Detection
-        if self._detect_night_streetlight(image_path):
-            return {
-                "category": "streetlight",
-                "confidence": 0.94,
-                "model_mode": "cv_night_streetlight_detector",
-                "raw_label": "streetlight_night_illumination",
-                "is_pretrained": False
-            }
+        # 0. Load & normalize image through PIL to safely handle WebP, AVIF, PNG with alpha, CMYK
+        pil_img = None
+        try:
+            pil_img = Image.open(image_path).convert("RGB")
+        except Exception as img_err:
+            logger.warning(f"[ImageAgent] Could not load image via PIL: {img_err}")
 
-        # Stage 2: Custom Fine-Tuned YOLO Classifier (Primary: Ultra-fast, 97.7% Domain Accuracy)
+        # Stage 1: Custom Fine-Tuned YOLO Classifier (Primary: Ultra-fast, 97.7% Domain Accuracy)
         if "custom_trained" in self.model_mode and self.model:
             try:
-                results = self.model(image_path, verbose=False)
+                target_input = pil_img if pil_img is not None else image_path
+                results = self.model(target_input, verbose=False)
                 if results and len(results) > 0:
                     probs = results[0].probs
                     top1_index = probs.top1
@@ -320,16 +325,41 @@ class ImageClassifierAgent:
                     names = results[0].names
                     raw_label = names.get(top1_index, "unknown").lower().strip()
                     matched_category = self._normalize_category(raw_label)
-                    logger.info(f"[ImageAgent] Custom YOLO Inference: raw='{raw_label}' -> civic='{matched_category}' (conf={top1_conf:.3f})")
+
+                    # Extract top-3 candidates for robust multi-object scene matching
+                    top3_candidates = []
+                    if hasattr(probs, "top5") and probs.top5:
+                        for idx in probs.top5[:3]:
+                            c_name = names.get(idx, "").lower().strip()
+                            c_conf = float(probs.data[idx]) if hasattr(probs, "data") else 0.0
+                            top3_candidates.append({
+                                "category": self._normalize_category(c_name),
+                                "raw_label": c_name,
+                                "confidence": round(c_conf, 3)
+                            })
+
+                    logger.info(f"[ImageAgent] Custom YOLO: raw='{raw_label}' -> civic='{matched_category}' (conf={top1_conf:.3f}), top3={[c['category'] for c in top3_candidates]}")
                     return {
                         "category": matched_category,
                         "confidence": round(top1_conf, 3),
                         "model_mode": "custom_trained",
                         "raw_label": raw_label,
-                        "is_pretrained": False
+                        "is_pretrained": False,
+                        "top3_candidates": top3_candidates
                     }
             except Exception as e:
                 logger.error(f"[ImageAgent] Custom YOLO inference error: {e}")
+
+        # Stage 2: Nighttime Streetlight CV Detection (Fallback)
+        if self._detect_night_streetlight(image_path, pil_img):
+            return {
+                "category": "streetlight",
+                "confidence": 0.94,
+                "model_mode": "cv_night_streetlight_detector",
+                "raw_label": "streetlight_night_illumination",
+                "is_pretrained": False,
+                "top3_candidates": [{"category": "streetlight", "raw_label": "streetlight", "confidence": 0.94}]
+            }
 
         # Stage 3: Ollama Moondream Vision Model (Fallback if custom model unavailable)
         vision_res = self._classify_with_vision_llm(image_path)
@@ -339,7 +369,8 @@ class ImageClassifierAgent:
                 "confidence": vision_res["confidence"],
                 "model_mode": vision_res["model_mode"],
                 "raw_label": vision_res.get("description", "")[:60],
-                "is_pretrained": False
+                "is_pretrained": False,
+                "top3_candidates": [{"category": vision_res["category"], "raw_label": vision_res["category"], "confidence": vision_res["confidence"]}]
             }
 
         # Stage 4: Pretrained YOLO Classifier Inference
@@ -487,7 +518,7 @@ class ImageClassifierAgent:
                 is_relevant = True
             elif comp_cat in drainage_group and (img_cat in drainage_group or (image_path and any(k in image_path.lower() for k in ["drain", "sewer", "manhole"]))):
                 is_relevant = True
-            elif comp_cat in water_group and (img_cat in water_group or (image_path and any(k in image_path.lower() for k in ["water", "pipe", "leak", "pipeline"]))):
+            elif comp_cat in water_group and (img_cat in water_group or (image_path and any(k in image_path.lower() for k in ["water", "pipe", "leak", "pipeline", "flood"]))):
                 is_relevant = True
             elif comp_cat in traffic_group and (img_cat in traffic_group or (image_path and any(k in image_path.lower() for k in ["traffic", "jam", "signal", "road_incident"]))):
                 is_relevant = True
@@ -501,6 +532,31 @@ class ImageClassifierAgent:
                 is_relevant = True
             elif comp_cat == img_cat and img_cat != "other":
                 is_relevant = True
+
+        # Check top-3 candidates if not yet matched (handles Google images with background clutter/multiple objects)
+        top_candidates = image_prediction.get("top3_candidates", [])
+        matched_candidate_conf = conf
+        if not is_relevant and not is_explicitly_non_civic and top_candidates:
+            for cand in top_candidates:
+                cand_cat = cand.get("category", "")
+                cand_conf = cand.get("confidence", 0.0)
+                if cand_conf >= 0.15:
+                    if (comp_cat in streetlight_group and cand_cat in streetlight_group) or \
+                       (comp_cat in pothole_group and cand_cat in pothole_group) or \
+                       (comp_cat in garbage_group and cand_cat in garbage_group) or \
+                       (comp_cat in drainage_group and cand_cat in drainage_group) or \
+                       (comp_cat in water_group and cand_cat in water_group) or \
+                       (comp_cat in traffic_group and cand_cat in traffic_group) or \
+                       (comp_cat in banner_group and cand_cat in banner_group) or \
+                       (comp_cat in trees_group and cand_cat in trees_group) or \
+                       (comp_cat == cand_cat and cand_cat != "other"):
+                        is_relevant = True
+                        matched_candidate_conf = max(conf, cand_conf)
+                        logger.info(f"[ImageAgent] Evidence match verified via top-3 candidate '{cand_cat}' (conf={cand_conf:.3f})")
+                        break
+
+        if is_relevant:
+            conf = max(conf, matched_candidate_conf)
 
         # In case evidence matches via image_path context, ensure confidence is sufficient
         if is_relevant and conf < min_confidence and image_path and any(k in image_path.lower() for k in ["sample", "pothole", "streetlight"]):
