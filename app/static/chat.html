@@ -342,41 +342,52 @@
             40% { transform: scale(1); opacity: 1; }
         }
 
-        /* 4. Quick Suggestion Chips */
-        .chips-scroll {
+        /* Voice Language Selector Bar */
+        .voice-lang-bar {
             display: flex;
-            gap: 7px;
-            overflow-x: auto;
-            padding: 6px 14px 4px 14px;
-            background: #eef4f8;
-            scrollbar-width: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 5px 12px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
         }
-        .chips-scroll::-webkit-scrollbar { display: none; }
-        .quick-chip {
+        .lang-pill {
             background: #ffffff;
             border: 1px solid #cbd5e1;
-            padding: 5px 12px;
-            border-radius: 16px;
-            font-size: 0.74rem;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.72rem;
             font-weight: 600;
-            color: #0b3b64;
-            white-space: nowrap;
+            color: #475569;
             cursor: pointer;
-            transition: all 0.15s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+            user-select: none;
         }
-        .quick-chip:hover {
+        .lang-pill:hover {
+            border-color: #0b3b64;
+            color: #0b3b64;
+        }
+        .lang-pill.active {
             background: #0b3b64;
             color: #ffffff;
             border-color: #0b3b64;
+            box-shadow: 0 1px 4px rgba(11, 59, 100, 0.25);
         }
-        .quick-chip.danger {
-            border-color: #f87171;
-            color: #dc2626;
+        .speak-bubble-btn {
+            background: rgba(11, 59, 100, 0.08);
+            border: 1px solid rgba(11, 59, 100, 0.15);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            padding: 2px 7px;
+            cursor: pointer;
+            color: #0b3b64;
+            transition: all 0.15s ease;
+            line-height: 1;
         }
-        .quick-chip.danger:hover {
-            background: #dc2626;
-            color: white;
+        .speak-bubble-btn:hover {
+            background: #0b3b64;
+            color: #ffffff;
         }
 
         /* 5. Photo Attachment Preview Chip */
@@ -800,15 +811,7 @@
                 </div>
             </div>
 
-            <!-- 4. Quick Suggestion Chips -->
-            <div class="chips-scroll">
-                <span class="quick-chip" onclick="selectCategoryBlock('streetlight', '💡 Streetlight (पथदिवा)')">💡 Streetlight (पथदिवा)</span>
-                <span class="quick-chip" onclick="selectCategoryBlock('pothole', '🕳️ Pothole (खड्डा)')">🕳️ Pothole (खड्डा)</span>
-                <span class="quick-chip" onclick="selectCategoryBlock('garbage', '🗑️ Garbage (कचरा)')">🗑️ Garbage (कचरा)</span>
-                <span class="quick-chip" onclick="selectCategoryBlock('drainage', '🌊 Drainage (ड्रेनेज)')">🌊 Drainage (ड्रेनेज)</span>
-                <span class="quick-chip" onclick="selectCategoryBlock('pipeline_water_leakage', '🚰 Water Leak (पाणी गळती)')">🚰 Water Leak (पाणी गळती)</span>
-                <span class="quick-chip danger" onclick="selectCategoryBlock('profanity_test', '🚫 Profanity Test')">🚫 Profanity Test</span>
-            </div>
+
 
             <!-- 5. Photo Attachment Preview Strip -->
             <div class="preview-strip" id="previewStrip">
@@ -822,7 +825,15 @@
             <!-- Listening Status Badge for Voice (Bhashini STT) -->
             <div class="listen-status-badge" id="listenStatusBadge">
                 <span style="font-size: 1rem;">🎙️</span>
-                <span>भाषिणी AI ऐकत आहे (Listening with Bhashini STT...)</span>
+                <span>भाषिणी AI ऐकत आहे (Listening...)</span>
+            </div>
+
+            <!-- Voice Language Selector -->
+            <div class="voice-lang-bar">
+                <span style="font-size: 0.70rem; color: #64748b; font-weight: 600;">🎙️ भाषा / Lang:</span>
+                <span class="lang-pill active" id="pillMr" onclick="setVoiceLang('mr', 'mr-IN', this)">मराठी</span>
+                <span class="lang-pill" id="pillHi" onclick="setVoiceLang('hi', 'hi-IN', this)">हिंदी</span>
+                <span class="lang-pill" id="pillEn" onclick="setVoiceLang('en', 'en-IN', this)">English</span>
             </div>
 
             <!-- 6. Bottom Input Bar -->
@@ -1164,6 +1175,28 @@
             }, isError ? 6000 : 3500);
         }
 
+        let selectedVoiceLang = 'mr';
+        let selectedVoiceLocale = 'mr-IN';
+        let silenceDebounceTimer = null;
+
+        function setVoiceLang(code, locale, el) {
+            selectedVoiceLang = code;
+            selectedVoiceLocale = locale;
+            document.querySelectorAll('.lang-pill').forEach(p => p.classList.remove('active'));
+            if (el) el.classList.add('active');
+            const input = document.getElementById('messageInput');
+            if (code === 'mr') {
+                input.placeholder = "समस्या सांगा (किंवा 🎤 बोला)...";
+                showVoiceToast("🌐 भाषा निवडली: मराठी (mr-IN)", false);
+            } else if (code === 'hi') {
+                input.placeholder = "समस्या बताएं (या 🎤 बोलें)...";
+                showVoiceToast("🌐 भाषा चुनी गई: हिंदी (hi-IN)", false);
+            } else {
+                input.placeholder = "Describe issue (or speak 🎤)...";
+                showVoiceToast("🌐 Language: English (en-IN)", false);
+            }
+        }
+
         async function triggerVoice() {
             const input = document.getElementById('messageInput');
             const micBtn = document.getElementById('micBtn');
@@ -1185,74 +1218,86 @@
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-            // 2. Chrome / Edge / Safari / Android: Native Indic SpeechRecognition (Zero-latency Marathi STT)
+            // 2. Chrome / Edge / Safari / Android: Continuous Native Indic SpeechRecognition
             if (SpeechRecognition) {
                 try {
                     const recognition = new SpeechRecognition();
                     recognitionInstance = recognition;
-                    recognition.continuous = false;
+                    recognition.continuous = true;
                     recognition.interimResults = true;
-                    recognition.lang = 'mr-IN'; // Marathi Primary
+                    recognition.lang = selectedVoiceLocale;
 
-                    let recognizedAnyText = false;
+                    let finalAccumulatedText = '';
+                    let hasSpoken = false;
+
+                    const resetSilenceTimeout = () => {
+                        clearTimeout(silenceDebounceTimer);
+                        silenceDebounceTimer = setTimeout(() => {
+                            if (isRecording && recognitionInstance) {
+                                try { recognitionInstance.stop(); } catch (_) {}
+                            }
+                        }, 2400);
+                    };
 
                     recognition.onstart = () => {
                         isRecording = true;
+                        hasSpoken = false;
                         micBtn.classList.add('mic-recording');
                         if (statusBadge) {
-                            statusBadge.innerHTML = '<span>🎙️</span><span>भाषिणी AI ऐकत आहे (मराठीत बोला...)</span>';
+                            const langName = selectedVoiceLang === 'mr' ? 'मराठीत' : (selectedVoiceLang === 'hi' ? 'हिंदी में' : 'English');
+                            statusBadge.innerHTML = `<span>🎙️</span><span>भाषिणी AI ऐकत आहे (${langName} बोला...)</span>`;
                             statusBadge.style.display = 'flex';
                         }
-                        input.placeholder = "🎙️ बोलत आहात... (बोलणे झाल्यावर 🎤 वर पुन्हा दाबा)";
-                        showVoiceToast("🎙️ भाषिणी AI ऐकत आहे... कृपया मराठीत बोला.", false);
+                        input.placeholder = "🎙️ बोलत आहात... ऐकत आहे (Listening...)";
+                        showVoiceToast(`🎙️ भाषिणी AI ऐकत आहे... (${selectedVoiceLocale})`, false);
+                        resetSilenceTimeout();
                     };
 
                     recognition.onresult = (event) => {
-                        recognizedAnyText = true;
-                        let finalTranscript = '';
-                        let interimTranscript = '';
+                        hasSpoken = true;
+                        resetSilenceTimeout();
+                        let interim = '';
                         for (let i = event.resultIndex; i < event.results.length; ++i) {
                             if (event.results[i].isFinal) {
-                                finalTranscript += event.results[i][0].transcript;
+                                finalAccumulatedText += (finalAccumulatedText ? ' ' : '') + event.results[i][0].transcript.trim();
                             } else {
-                                interimTranscript += event.results[i][0].transcript;
+                                interim += event.results[i][0].transcript;
                             }
                         }
-                        if (interimTranscript) input.value = interimTranscript;
-                        if (finalTranscript) input.value = finalTranscript;
+                        const currentDisplay = finalAccumulatedText + (interim ? ' ' + interim : '');
+                        if (currentDisplay) input.value = currentDisplay.trim();
                     };
 
                     recognition.onerror = (event) => {
                         console.warn("[Voice STT] SpeechRecognition error:", event.error);
-                        stopRecordingState();
-                        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                            showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया वर URL बारमधील 🔒 किंवा 🎙️ चिन्हावर क्लिक करून 'Allow' करा.", true);
-                            alert("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे!\n\nकृपया ब्राउझरच्या ॲड्रेस बारमध्ये वर डाव्या बाजूला असलेल्या 🔒 (किंवा 🎙️) आयकॉनवर क्लिक करा, आणि Microphone 'Allow' करून पेज रिफ्रेश करा.");
-                        } else if (event.error === 'no-speech') {
-                            showVoiceToast("⚠️ कोणताही आवाज ऐकू आला नाही. कृपया माईकजवळ स्पष्ट बोला.", true);
-                        } else if (event.error === 'audio-capture') {
-                            showVoiceToast("⚠️ मायक्रोफोन डिव्हाइस उपलब्ध नाही. माईक कनेक्शन तपासा.", true);
-                        } else if (event.error === 'network') {
-                            showVoiceToast("⚠️ इंटरनेट किंवा व्हॉईस नेटवर्क समस्या. कृपया पुन्हा प्रयत्न करा.", true);
+                        if (event.error !== 'no-speech') {
+                            stopRecordingState();
+                            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                                showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया 'Allow' करा.", true);
+                            } else {
+                                showVoiceToast("⚠️ व्हॉईस एरर: " + event.error, true);
+                            }
                         }
                     };
 
                     recognition.onend = () => {
+                        clearTimeout(silenceDebounceTimer);
                         stopRecordingState();
-                        const spokenText = input.value.trim();
-                        if (recognizedAnyText && spokenText.length > 0) {
+                        const spokenText = (finalAccumulatedText || input.value).trim();
+                        if (hasSpoken && spokenText.length > 0) {
+                            input.value = spokenText;
                             lastInputWasVoice = true;
                             showVoiceToast("✅ आवाज ओळखला: " + spokenText, false);
                             setTimeout(() => {
                                 sendMessage(false);
-                            }, 500);
+                            }, 800);
                         }
                     };
 
                     recognition.start();
                     return;
                 } catch (e) {
-                    console.warn("[Voice STT] SpeechRecognition failed to start, trying MediaRecorder:", e);
+                    console.warn("[Voice STT] SpeechRecognition error, trying MediaRecorder:", e);
                 }
             }
 
@@ -1277,7 +1322,7 @@
                     mediaRecorderInstance.onstop = async () => {
                         stream.getTracks().forEach(t => t.stop());
                         if (audioChunks.length > 0) {
-                            showVoiceToast("⏳ भाषिणी AI आवाजाचे मजकुरात रूपांतर करत आहे...", false);
+                            showVoiceToast("⏳ भाषिणी AI आवाजाचे रूपांतर करत आहे...", false);
                             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                             await sendAudioToBhashini(audioBlob);
                         }
@@ -1287,8 +1332,7 @@
                     console.warn("[Voice STT] MediaRecorder error:", recErr);
                     stopRecordingState();
                     if (recErr.name === 'NotAllowedError' || recErr.name === 'PermissionDeniedError') {
-                        showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया ब्राउझरमध्ये 'Allow' करा.", true);
-                        alert("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे!\n\nकृपया ब्राउझरच्या ॲड्रेस बारमध्ये वर डाव्या बाजूला असलेल्या 🔒 आयकॉनवर क्लिक करून Microphone: Allow करा.");
+                        showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया ब्राऊझरमध्ये 'Allow' करा.", true);
                     } else {
                         showVoiceToast("⚠️ मायक्रोफोन सुरू करता आला नाही.", true);
                     }
@@ -1303,7 +1347,7 @@
             try {
                 const formData = new FormData();
                 formData.append('audio', audioBlob, 'voice_query.webm');
-                formData.append('language', 'mr');
+                formData.append('language', selectedVoiceLang);
                 formData.append('audio_format', 'webm');
 
                 const response = await fetch('/api/v1/voice/stt', {
@@ -1315,19 +1359,15 @@
                     if (data.transcript && data.transcript.trim().length > 0) {
                         input.value = data.transcript.trim();
                         showVoiceToast("✅ भाषिणी STT: " + data.transcript.trim(), false);
-                    } else if (data.source === 'indic_fallback') {
-                        showVoiceToast("ℹ️ भाषिणी स्थानिक मोड सक्रिय आहे. कृपया थेट मजकूर तपासा.", false);
+                        lastInputWasVoice = true;
+                        setTimeout(() => { sendMessage(false); }, 700);
+                    } else {
+                        showVoiceToast("ℹ️ आवाज स्पष्ट ऐकू आला नाही, कृपया पुन्हा बोला किंवा थेट टाईप करा.", false);
                     }
                 }
             } catch (err) {
                 console.warn("[Bhashini STT] Network request failed:", err);
                 showVoiceToast("⚠️ भाषिणी सर्व्हरशी संपर्क होऊ शकला नाही.", true);
-            }
-
-            const spokenText = input.value.trim();
-            if (spokenText && spokenText.length > 0) {
-                lastInputWasVoice = true;
-                setTimeout(() => { sendMessage(false); }, 400);
             }
         }
 
@@ -1338,7 +1378,9 @@
             const statusBadge = document.getElementById('listenStatusBadge');
             if (micBtn) micBtn.classList.remove('mic-recording');
             if (statusBadge) statusBadge.style.display = 'none';
-            if (input) input.placeholder = "Your Message (किंवा 🎤 बोला...)";
+            if (input) {
+                input.placeholder = (selectedVoiceLang === 'mr') ? "समस्या सांगा (किंवा 🎤 बोला)..." : ((selectedVoiceLang === 'hi') ? "समस्या बताएं (या 🎤 बोलें)..." : "Your Message (or speak 🎤)...");
+            }
 
             if (recognitionInstance) {
                 try { recognitionInstance.stop(); } catch (_) {}
@@ -1346,6 +1388,81 @@
             }
             if (mediaRecorderInstance && mediaRecorderInstance.state !== 'inactive') {
                 try { mediaRecorderInstance.stop(); } catch (_) {}
+            }
+        }
+
+        // ==========================================
+        // VOICE OUTPUT (TTS) & MESSAGE SPEECH PLAYBACK
+        // ==========================================
+        function playBotVoiceResponse(audioBase64, replyText, lang = 'mr') {
+            if (audioBase64) {
+                try {
+                    const audio = new Audio("data:audio/wav;base64," + audioBase64);
+                    audio.play().catch(e => {
+                        console.warn("[TTS] Audio playback prevented:", e);
+                        fallbackBrowserSpeech(replyText, lang);
+                    });
+                    return;
+                } catch (err) {
+                    console.warn("[TTS] Audio constructor failed, falling back to speech synthesis:", err);
+                }
+            }
+            fallbackBrowserSpeech(replyText, lang);
+        }
+
+        function playBubbleSpeech(btn, lang = 'mr') {
+            const bubble = btn.closest('.message-bubble');
+            if (!bubble) return;
+            const textNodes = [];
+            bubble.childNodes.forEach(n => {
+                if (n.nodeType === Node.TEXT_NODE) textNodes.push(n.textContent);
+                else if (n.nodeType === Node.ELEMENT_NODE && !n.classList.contains('bubble-tag') && !n.classList.contains('speak-bubble-btn') && !n.classList.contains('msg-time') && !n.classList.contains('badge-pill') && !n.classList.contains('action-container')) {
+                    textNodes.push(n.innerText);
+                }
+            });
+            const rawText = textNodes.join(' ').replace(/[🎫📍👷⏱️🎉⚠️📋🚫👉•#*]/g, '').trim();
+            if (!rawText) return;
+
+            btn.textContent = '🔊...';
+            btn.disabled = true;
+
+            fetch('/api/v1/voice/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: rawText.substring(0, 320), language: lang || 'mr', gender: 'female' })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.audio_base64) {
+                    const snd = new Audio("data:audio/wav;base64," + data.audio_base64);
+                    snd.onended = () => { btn.textContent = '🔊'; btn.disabled = false; };
+                    snd.onerror = () => fallbackBrowserSpeech(rawText, lang, btn);
+                    snd.play().catch(() => fallbackBrowserSpeech(rawText, lang, btn));
+                } else {
+                    fallbackBrowserSpeech(rawText, lang, btn);
+                }
+            })
+            .catch(() => {
+                fallbackBrowserSpeech(rawText, lang, btn);
+            });
+        }
+
+        function fallbackBrowserSpeech(text, lang = 'mr', btn = null) {
+            if ('speechSynthesis' in window) {
+                try {
+                    window.speechSynthesis.cancel();
+                    const clean = text.replace(/[*_#`]/g, '').replace(/[🎫📍👷⏱️🎉⚠️📋🚫👉•]/g, '').trim();
+                    const u = new SpeechSynthesisUtterance(clean.substring(0, 240));
+                    u.lang = (lang === 'en') ? 'en-IN' : ((lang === 'hi') ? 'hi-IN' : 'mr-IN');
+                    u.rate = 1.0;
+                    u.onend = () => { if (btn) { btn.textContent = '🔊'; btn.disabled = false; } };
+                    u.onerror = () => { if (btn) { btn.textContent = '🔊'; btn.disabled = false; } };
+                    window.speechSynthesis.speak(u);
+                } catch (err) {
+                    if (btn) { btn.textContent = '🔊'; btn.disabled = false; }
+                }
+            } else {
+                if (btn) { btn.textContent = '🔊'; btn.disabled = false; }
             }
         }
 
@@ -1421,8 +1538,12 @@
             if (text) formData.append('message', text);
 
             const isProcessOrHelpQuery = /^(how|what|who|help|steps|process|procedure|तक्रार\s*कशी|कशी|माहिती|पायऱ्या|मला\s*तक्रार|takrar\s*kashi|step)/i.test(text.trim());
-            if (currentCategoryKey && !isProcessOrHelpQuery) {
+            const isShortFollowup = text && text.trim().length < 15 && /^(हो|होय|yes|yep|sure|करा|नोंदवा|submit|register|ok|okay)/i.test(text.trim());
+            if (currentCategoryKey && (isShortFollowup || (!text && !isProcessOrHelpQuery))) {
                 formData.append('category', currentCategoryKey);
+            }
+            if (lastInputWasVoice) {
+                formData.append('voice_reply', 'true');
             }
             formData.append('latitude', defaultLat);
             formData.append('longitude', defaultLng);
@@ -1457,6 +1578,9 @@
         }
 
         function handleBotChatResponse(data, time) {
+            if (lastInputWasVoice || data.audio_base64) {
+                playBotVoiceResponse(data.audio_base64, data.reply, data.language || selectedVoiceLang);
+            }
             lastInputWasVoice = false;
 
             if (data.intent === 'GREETING' || data.intent === 'COMPLAINT_PROCESS_GUIDE' || data.intent === 'CIVIC_KNOWLEDGE_INQUIRY') {
@@ -1810,7 +1934,10 @@
             row.innerHTML = `
                 <div class="bot-icon-small">🤖</div>
                 <div class="message-bubble bot">
-                    <div class="bubble-tag">WARDMITRA AI</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                        <div class="bubble-tag">WARDMITRA AI</div>
+                        <button class="speak-bubble-btn" onclick="playBubbleSpeech(this, '${lang || 'mr'}')" title="ऐका (Listen)">🔊</button>
+                    </div>
                     <div style="white-space: pre-line;">${formatMarkdownText(msg)}</div>
                     <div class="msg-time">${time}</div>
                 </div>
@@ -1833,7 +1960,10 @@
             row.innerHTML = `
                 <div class="bot-icon-small">🤖</div>
                 <div class="message-bubble bot">
-                    <div class="bubble-tag">WARDMITRA AI</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                        <div class="bubble-tag">WARDMITRA AI</div>
+                        <button class="speak-bubble-btn" onclick="playBubbleSpeech(this, '${data.language || 'mr'}')" title="ऐका (Listen)">🔊</button>
+                    </div>
                     <span class="category-badge-pill">📂 ${catBadge}</span>
                     <div style="white-space: pre-line; margin-top: 4px;">${formatMarkdownText(data.reply)}</div>
                     <div class="action-container">

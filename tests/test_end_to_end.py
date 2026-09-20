@@ -232,10 +232,10 @@ def test_duplicate_and_repeat_count_increment():
 
     # 1. Register initial drainage complaint in Ward 25 (Wakad)
     unique_phone = f"989{random.randint(1000000, 9999999)}"
-    lat_offset = round(18.6050 + random.uniform(0.001, 0.009), 4)
-    lng_offset = round(73.7650 + random.uniform(0.001, 0.009), 4)
+    lat_offset = round(18.6050 + random.uniform(0.015, 0.085), 4)
+    lng_offset = round(73.7650 + random.uniform(0.015, 0.085), 4)
     data = {
-        "description": "वाकड चौकात गटार तुंबले असून सांडपाणी रस्त्यावर पसरले आहे.",
+        "description": f"वाकड चौकात गटार तुंबले असून सांडपाणी रस्त्यावर पसरले आहे ({random.randint(10000, 99999)}).",
         "latitude": lat_offset,
         "longitude": lng_offset,
         "citizen_phone": unique_phone

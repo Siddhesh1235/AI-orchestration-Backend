@@ -900,15 +900,7 @@
                     </div>
                 </div>
 
-                <!-- Quick Chips (Select Category without immediate complaint creation) -->
-                <div class="chat-chips">
-                    <span class="chip-btn" onclick="selectIndexCategory('streetlight', '💡 Streetlight (पथदिवा)')">💡 Streetlight (पथदिवा)</span>
-                    <span class="chip-btn" onclick="selectIndexCategory('pothole', '🕳️ Pothole (खड्डा)')">🕳️ Pothole (खड्डा)</span>
-                    <span class="chip-btn" onclick="selectIndexCategory('garbage', '🗑️ Garbage (कचरा)')">🗑️ Garbage (कचरा)</span>
-                    <span class="chip-btn" onclick="selectIndexCategory('drainage', '🌊 Drainage (ड्रेनेज)')">🌊 Drainage (ड्रेनेज)</span>
-                    <span class="chip-btn" onclick="selectIndexCategory('pipeline_water_leakage', '🚰 Water Leak (पाणी गळती)')">🚰 Water Leak</span>
-                    <span class="chip-btn danger" onclick="selectIndexCategory('profanity_test', '🚫 Profanity Test')">🚫 Profanity Test</span>
-                </div>
+
 
                 <!-- Photo Preview Strip -->
                 <div class="attachment-bar" id="chatAttachmentBar">
@@ -1216,14 +1208,15 @@
         let indexRecInstance = null;
         let isIndexRecording = false;
 
+        let indexSpeechDebounce = null;
+
         function triggerChatVoice() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             const input = document.getElementById('chatInputText');
             const micBtn = document.getElementById('chatMicBtn');
 
             if (!SpeechRecognition) {
-                input.value = "वाकड चौकात खड्डा पडला आहे, कृपया लवकर काम करा.";
-                executeChatSend(false);
+                alert("या ब्राउझरमध्ये व्हॉईस इनपुट उपलब्ध नाही. कृपया Chrome किंवा Edge वापरा किंवा थेट मजकूर टाईप करा.");
                 return;
             }
 
@@ -1235,37 +1228,56 @@
             try {
                 const rec = new SpeechRecognition();
                 indexRecInstance = rec;
-                rec.continuous = false;
+                rec.continuous = true;
                 rec.interimResults = true;
                 rec.lang = 'mr-IN';
 
+                let finalAccumulated = '';
+                let hasSpoken = false;
+
+                const resetTimer = () => {
+                    clearTimeout(indexSpeechDebounce);
+                    indexSpeechDebounce = setTimeout(() => {
+                        if (isIndexRecording && indexRecInstance) {
+                            try { indexRecInstance.stop(); } catch (_) {}
+                        }
+                    }, 2200);
+                };
+
                 rec.onstart = () => {
                     isIndexRecording = true;
+                    hasSpoken = false;
                     micBtn.style.background = '#dc2626';
                     micBtn.style.boxShadow = '0 0 12px rgba(220, 38, 38, 0.8)';
                     input.placeholder = "🎙️ बोलत आहात... ऐकत आहे (Listening...)";
+                    resetTimer();
                 };
 
                 rec.onresult = (e) => {
-                    let finalT = '';
-                    let interimT = '';
+                    hasSpoken = true;
+                    resetTimer();
+                    let interim = '';
                     for (let i = e.resultIndex; i < e.results.length; ++i) {
-                        if (e.results[i].isFinal) finalT += e.results[i][0].transcript;
-                        else interimT += e.results[i][0].transcript;
+                        if (e.results[i].isFinal) finalAccumulated += (finalAccumulated ? ' ' : '') + e.results[i][0].transcript.trim();
+                        else interim += e.results[i][0].transcript;
                     }
-                    if (interimT) input.value = interimT;
-                    if (finalT) input.value = finalT;
+                    const fullText = finalAccumulated + (interim ? ' ' + interim : '');
+                    if (fullText) input.value = fullText.trim();
                 };
 
-                rec.onerror = () => {
-                    stopIndexRecording();
+                rec.onerror = (e) => {
+                    if (e.error !== 'no-speech') {
+                        stopIndexRecording();
+                    }
                 };
 
                 rec.onend = () => {
+                    clearTimeout(indexSpeechDebounce);
                     stopIndexRecording();
-                    const spoken = input.value.trim();
-                    if (spoken && spoken.length > 1) {
-                        executeChatSend(false);
+                    const spoken = (finalAccumulated || input.value).trim();
+                    if (hasSpoken && spoken.length > 1) {
+                        input.value = spoken;
+                        setTimeout(() => { executeChatSend(false); }, 600);
                     }
                 };
 

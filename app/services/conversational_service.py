@@ -23,6 +23,7 @@ from app.database.models import Complaint
 from app.agents.geo_agent import geo_agent
 from app.clients.llm_client import llm_client
 from app.services.human_persona_service import human_persona_service
+from app.services.image_understanding_service import image_understanding_service, ImageAnalysisResult
 from app.rules.category_rules import (
     is_ambiguous_light_complaint,
     get_light_clarification_prompt,
@@ -503,22 +504,35 @@ class ConversationalService:
                 "action_prompt": "describe_problem"
             }
 
-        # Detect Civic Category from NLP or Category input
-        detected_category = category
-        if not detected_category and text:
+        # Detect Civic Category from NLP (user text) or fallback to session category
+        text_category = None
+        if text:
             for cat_key in CATEGORY_DISPLAY_NAMES.keys():
                 if cat_key in t_clean:
-                    detected_category = cat_key
+                    text_category = cat_key
                     break
-            if not detected_category:
+            if not text_category:
                 nlp_res = nlp_agent.extract_intent_and_category(text)
-                detected_category = nlp_res.get("category")
+                text_category = nlp_res.get("category")
+
+        # Prioritize freshly spoken/typed category from text.
+        # Fall back to passed category only if text is a brief confirmation, follow-up, or photo-only.
+        is_short_followup = bool(text and (len(t_clean) < 15 and any(w in t_clean for w in ["हो", "होय", "yes", "करा", "नोंदवा", "submit", "register", "ok", "sure"])))
+        if text_category:
+            detected_category = text_category
+        elif is_short_followup or not text:
+            detected_category = category
+        else:
+            detected_category = category or text_category
 
         cat_info = CATEGORY_DISPLAY_NAMES.get(detected_category, {"en": "Civic Grievance", "mr": "नागरी समस्या"})
         cat_name_current = cat_info.get(lang, cat_info["en"])
 
-        # 6. Image Evidence Verification & Low Confidence Check (Requirements 4, 5 & Tests 6, 12)
+        # 6. Image Understanding, Evidence Verification & Context-Aware Follow-up
         saved_tmp_photo_path = None
+        img_analysis = None
+        all_info_known = False
+
         if photo_filename and photo_bytes:
             unique_tmp_filename = f"chat_verify_{routing_agent.generate_ticket_id()}_{photo_filename}"
             tmp_path = Path(settings.UPLOAD_DIR) / unique_tmp_filename
@@ -526,42 +540,127 @@ class ConversationalService:
                 f.write(photo_bytes)
             saved_tmp_photo_path = str(tmp_path)
 
-            img_eval = image_agent.classify_image(saved_tmp_photo_path)
-            target_cat_for_eval = detected_category or "streetlight" if "light" in t_clean else (detected_category or "pothole")
-            ev_result = image_agent.verify_evidence(target_cat_for_eval, img_eval, min_confidence=0.30)
+            target_cat_for_eval = detected_category or ("streetlight" if "light" in t_clean else None)
 
-            # Check 1: Irrelevant evidence (e.g. food plate for streetlight) -> Reject!
-            if not ev_result["is_relevant"]:
-                reply_msg = ev_result["message_mr"] if lang == "mr" else ev_result["message_en"]
+            # Deep AI Vision Understanding Pipeline
+            img_analysis = image_understanding_service.analyze_image(
+                saved_tmp_photo_path,
+                user_message=text,
+                context={
+                    "category": target_cat_for_eval,
+                    "ward_number": ward_number,
+                    "latitude": latitude,
+                    "longitude": longitude
+                }
+            )
+
+            # Check 1: Irrelevant / Non-Civic Evidence (e.g. food plate, pet) -> Reject!
+            if target_cat_for_eval:
+                ev_result = image_agent.verify_evidence(
+                    target_cat_for_eval,
+                    {
+                        "category": img_analysis.category,
+                        "confidence": img_analysis.confidence,
+                        "raw_label": img_analysis.observations[0] if img_analysis.observations else ""
+                    },
+                    min_confidence=0.30,
+                    image_path=saved_tmp_photo_path
+                )
+                if not ev_result["is_relevant"]:
+                    reply_msg = ev_result["message_mr"] if lang == "mr" else ev_result["message_en"]
+                    return {
+                        "reply": reply_msg,
+                        "intent": "EVIDENCE_REJECTED",
+                        "language": lang,
+                        "category": target_cat_for_eval,
+                        "category_name": cat_name_current,
+                        "ticket_data": None,
+                        "action_prompt": "upload_valid_photo",
+                        "image_analysis": img_analysis.model_dump()
+                    }
+            elif img_analysis.category == "unrelated" or img_analysis.issue == "unrelated_image":
+                reply_msg = img_analysis.recommended_followup_mr if lang == "mr" else img_analysis.recommended_followup
                 return {
                     "reply": reply_msg,
                     "intent": "EVIDENCE_REJECTED",
                     "language": lang,
-                    "category": target_cat_for_eval,
-                    "category_name": cat_name_current,
+                    "category": None,
+                    "category_name": None,
                     "ticket_data": None,
-                    "action_prompt": "upload_valid_photo"
+                    "action_prompt": "upload_valid_photo",
+                    "image_analysis": img_analysis.model_dump()
                 }
 
-            # Check 2: Low-confidence image -> Request clearer photo
-            if not ev_result["is_confident"]:
-                reply_msg = ev_result["message_mr"] if lang == "mr" else ev_result["message_en"]
+            # Check 2: Low-confidence / Blurry image -> Request clearer photo
+            if img_analysis.image_quality in ["blurry", "corrupt"] or img_analysis.issue in ["blurry_image", "corrupted_image"]:
+                reply_msg = img_analysis.recommended_followup_mr if lang == "mr" else img_analysis.recommended_followup
                 return {
                     "reply": reply_msg,
                     "intent": "LOW_CONFIDENCE_IMAGE",
                     "language": lang,
-                    "category": target_cat_for_eval,
+                    "category": target_cat_for_eval or "pothole",
                     "category_name": cat_name_current,
                     "ticket_data": None,
-                    "action_prompt": "upload_clear_photo"
+                    "action_prompt": "upload_clear_photo",
+                    "image_analysis": img_analysis.model_dump()
+                }
+
+            # Check 3: Multiple distinct civic issues detected in one image
+            if img_analysis.has_multiple_issues:
+                reply_msg = img_analysis.recommended_followup_mr if lang == "mr" else img_analysis.recommended_followup
+                return {
+                    "reply": reply_msg,
+                    "intent": "MULTIPLE_ISSUES_DETECTED",
+                    "language": lang,
+                    "category": img_analysis.category,
+                    "category_name": cat_name_current,
+                    "ticket_data": None,
+                    "action_prompt": "select_issue",
+                    "image_analysis": img_analysis.model_dump()
+                }
+
+            # Adopt verified image category if not previously specified by citizen
+            if not detected_category or detected_category == "other":
+                detected_category = img_analysis.category
+                cat_info = CATEGORY_DISPLAY_NAMES.get(detected_category, {"en": "Civic Grievance", "mr": "नागरी समस्या"})
+                cat_name_current = cat_info.get(lang, cat_info["en"])
+
+            # Context-Aware Follow-Up Engine
+            followup = image_understanding_service.generate_followup(
+                analysis=img_analysis,
+                user_message=text,
+                context={
+                    "ward_number": ward_number,
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "category": detected_category
+                },
+                lang=lang
+            )
+
+            all_info_known = followup.get("all_info_known", False)
+            user_explicitly_confirms = self.is_registration_intent(text, action, confirm_register)
+
+            # If user has not confirmed and missing required info -> Ask follow-up question
+            if not user_explicitly_confirms and not all_info_known:
+                return {
+                    "reply": followup["followup_question"],
+                    "intent": "IMAGE_FOLLOWUP_REQUIRED",
+                    "language": lang,
+                    "category": detected_category,
+                    "category_name": cat_name_current,
+                    "ticket_data": None,
+                    "action_prompt": followup.get("next_action", "answer_followup"),
+                    "image_analysis": img_analysis.model_dump()
                 }
 
         # 7. Registration Flow (Only for verified evidence & confirmed complaints)
-        user_wants_registration = self.is_registration_intent(text, action, confirm_register) or bool(photo_bytes)
+        user_wants_registration = self.is_registration_intent(text, action, confirm_register) or all_info_known
         if user_wants_registration and (text or photo_bytes):
             final_cat = detected_category or "pothole"
             if len(text.strip()) < 5 or text.lower().strip() in ["हो", "होय", "yes", "yep", "sure", "करा", "नोंदवा", "submit", "register", "urgent", "proceed"]:
-                final_desc = f"पिंपरी चिंचवड परिसरातील {cat_name_current} संदर्भात नागरी तक्रार." if lang == "mr" else f"Civic grievance regarding {cat_info['en']} in PCMC area."
+                issue_tag = f" ({img_analysis.issue})" if img_analysis else ""
+                final_desc = f"पिंपरी चिंचवड परिसरातील {cat_name_current} संदर्भात नागरी तक्रार{issue_tag}." if lang == "mr" else f"Civic grievance regarding {cat_info['en']} in PCMC area{issue_tag}."
             else:
                 final_desc = text
 
