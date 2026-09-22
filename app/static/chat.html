@@ -435,6 +435,10 @@
             z-index: 10;
         }
 
+        .chat-input-bar input[type="file"] {
+            display: none !important;
+        }
+
         .icon-btn {
             width: 38px;
             height: 38px;
@@ -741,6 +745,223 @@
             z-index: 99;
             animation: pulse-red 1.5s infinite;
         }
+
+        /* Video Selection & In-App Recorder Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        .action-sheet-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 360px;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUpModal {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .action-sheet-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0b3b64;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-sheet-desc {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+        .action-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+        }
+        .action-option-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        .action-option-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .action-option-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .action-option-sub {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 1px;
+        }
+        .action-cancel-btn {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 10px;
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-top: 4px;
+        }
+        .action-cancel-btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* In-App Recorder Modal */
+        .recorder-box {
+            background: #0f172a;
+            color: white;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .recorder-header {
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e293b;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .recorder-viewfinder {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .recorder-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .rec-timer-badge {
+            position: absolute;
+            top: 12px;
+            left: 14px;
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(4px);
+            letter-spacing: 0.5px;
+        }
+        .rec-cam-flip {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+        .rec-progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #334155;
+        }
+        .rec-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #ef4444;
+            transition: width 0.2s linear;
+        }
+        .recorder-footer {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            background: #1e293b;
+        }
+        .rec-main-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            background: #ef4444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, background 0.15s;
+            outline: none;
+        }
+        .rec-main-btn:hover {
+            transform: scale(1.05);
+        }
+        .rec-main-btn:active {
+            transform: scale(0.95);
+        }
+        .rec-main-btn.recording {
+            background: #ffffff;
+            border-color: #ef4444;
+            animation: pulse-red 1.2s infinite;
+        }
+        .rec-inner-icon {
+            width: 22px;
+            height: 22px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        .rec-main-btn.recording .rec-inner-icon {
+            background: #ef4444;
+            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+        }
     </style>
 </head>
 <body>
@@ -838,10 +1059,16 @@
 
             <!-- 6. Bottom Input Bar -->
             <div class="chat-input-bar">
-                <button class="icon-btn" onclick="triggerCamera()" title="Upload Photo">
+                <button class="icon-btn" onclick="triggerCamera()" title="Upload Photo (फोटो जोडा)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                 </button>
-                <input type="file" id="hiddenPhotoInput" accept="image/*" onchange="onPhotoSelected(event)">
+                <input type="file" id="hiddenPhotoInput" accept="image/*" onchange="onPhotoSelected(event)" style="display: none;">
+
+                <button class="icon-btn" onclick="triggerVideo()" title="Upload Video (व्हिडिओ जोडा)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                </button>
+                <input type="file" id="hiddenVideoInput" accept="video/mp4,video/webm,video/3gpp,video/*" onchange="onVideoSelected(event)" style="display: none;">
+                <input type="file" id="hiddenLiveVideoInput" accept="video/*" capture="environment" onchange="onVideoSelected(event)" style="display: none;">
 
                 <button class="icon-btn" onclick="triggerVoice()" id="micBtn" title="Bhashini Voice Input (STT)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
@@ -877,9 +1104,13 @@
                         <option value="garbage">🗑️ Garbage & Cleanliness (कचरा व स्वच्छता)</option>
                         <option value="drainage">🌊 Drainage & Sewerage (ड्रेनेज व सांडपाणी)</option>
                         <option value="pipeline_water_leakage">🚰 Water Pipeline Leakage (पाणी गळती)</option>
-                        <option value="traffic_jams">🚦 Traffic Congestion (वाहतूक कोंडी)</option>
+                        <option value="health_sanitation">🏥 Health & Sanitation (आरोग्य व स्वच्छता)</option>
                         <option value="trees">🌳 Fallen Trees & Garden (झाड पडणे व उद्यान)</option>
+                        <option value="traffic_jams">🚦 Traffic Congestion (वाहतूक कोंडी)</option>
+                        <option value="electricity">⚡ Electricity Hazard (विद्युत समस्या व डीपी)</option>
                         <option value="encroachment">🚫 Encroachment (अतिक्रमण)</option>
+                        <option value="unauthorized_banner_flex">🚩 Banners & Flex (अनधिकृत बॅनर व फ्लेक्स)</option>
+                        <option value="noise_pollution">📢 Noise Pollution (ध्वनी प्रदूषण)</option>
                     </select>
                 </div>
 
@@ -905,12 +1136,12 @@
                 </div>
 
                 <div>
-                    <label class="form-label">समस्येचा फोटो / पुरावा (Photo Evidence):</label>
+                    <label class="form-label">समस्येचा फोटो किंवा व्हिडिओ पुरावा (Photo / Video Evidence):</label>
                     <div class="upload-dropzone" onclick="document.getElementById('regFileInput').click()">
-                        <p id="regUploadNotice" style="font-size: 0.82rem; color: #64748b;">📷 फोटो जोडण्यासाठी येथे टॅप करा (Camera / Gallery)</p>
+                        <p id="regUploadNotice" style="font-size: 0.82rem; color: #64748b;">📷 / 📹 फोटो किंवा व्हिडिओ जोडण्यासाठी येथे टॅप करा (कमाल १० MB)</p>
                         <img id="regPreviewImg" style="display:none; max-height: 120px; border-radius: 8px; margin: 6px auto 0 auto; object-fit: cover;" alt="Preview">
                     </div>
-                    <input type="file" id="regFileInput" accept="image/*" onchange="onRegPhotoSelected(event)" style="display:none;">
+                    <input type="file" id="regFileInput" accept="image/*,video/mp4,video/webm,video/3gpp,video/*" onchange="onRegPhotoSelected(event)" style="display:none;">
                 </div>
 
                 <div>
@@ -1008,6 +1239,90 @@
             <div class="nav-key circle" onclick="showScreen('chat')" title="AI चॅट (Chat)"></div>
             <div class="nav-key triangle" onclick="handleHeaderBack()" title="मागे जा (Back)"></div>
         </div>
+
+        <!-- Video Options Modal (Action Sheet) -->
+        <div class="modal-overlay" id="videoChoiceModal" onclick="if(event.target===this) closeVideoChoiceModal()">
+            <div class="action-sheet-box">
+                <div class="action-sheet-title">
+                    <span>📹</span>
+                    <span>व्हिडिओ पुरावा जोडा (Add Video)</span>
+                </div>
+                <div class="action-sheet-desc">
+                    नागरी समस्येचा व्हिडिओ थेट कॅमेऱ्याने रेकॉर्ड करा किंवा गॅलरीतून निवडा:
+                </div>
+
+                <div class="action-option-btn" onclick="startNativeVideoRecording()">
+                    <div class="action-option-icon" style="background: #fee2e2; color: #dc2626;">📱</div>
+                    <div>
+                        <div class="action-option-title">थेट फोन कॅमेरा (Phone Camera)</div>
+                        <div class="action-option-sub">मोबाईलचा कॅमेरा थेट व्हिडिओ मोडमध्ये उघडा</div>
+                    </div>
+                </div>
+
+                <div class="action-option-btn" onclick="openInAppRecorder()">
+                    <div class="action-option-icon" style="background: #e0f2fe; color: #0284c7;">🎥</div>
+                    <div>
+                        <div class="action-option-title">इन-ॲप लाईव्ह रेकॉर्डर (Live Viewfinder)</div>
+                        <div class="action-option-sub">चॅटबॉट स्क्रीनवरच थेट व्हिडिओ रेकॉर्ड करा</div>
+                    </div>
+                </div>
+
+                <div class="action-option-btn" onclick="chooseVideoFromFile()">
+                    <div class="action-option-icon" style="background: #f1f5f9; color: #475569;">📁</div>
+                    <div>
+                        <div class="action-option-title">गॅलरी / फाईलमधून निवडा (Gallery / Files)</div>
+                        <div class="action-option-sub">मोबाईल किंवा कॉम्प्युटरमधील सेव्ह फाईल निवडा</div>
+                    </div>
+                </div>
+
+                <button class="action-cancel-btn" onclick="closeVideoChoiceModal()">✕ रद्द करा (Cancel)</button>
+            </div>
+        </div>
+
+        <!-- In-App Live Video Recorder Modal -->
+        <div class="modal-overlay" id="inAppRecorderModal" onclick="if(event.target===this) closeInAppRecorder()">
+            <div class="recorder-box">
+                <div class="recorder-header">
+                    <div style="font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <span>🎥</span>
+                        <span>लाईव्ह व्हिडिओ रेकॉर्डर</span>
+                    </div>
+                    <button onclick="closeInAppRecorder()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">✕</button>
+                </div>
+
+                <div class="recorder-viewfinder">
+                    <video id="liveCamStream" class="recorder-video" autoplay playsinline muted></video>
+                    <video id="liveRecordedPreview" class="recorder-video" controls playsinline style="display:none;"></video>
+                    <div class="rec-timer-badge" id="recTimerBadge" style="display:none;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: white; animation: pulseDot 1s infinite;"></span>
+                        <span id="recTimerText">00:00 / 01:00</span>
+                    </div>
+                    <button class="rec-cam-flip" id="btnFlipCam" onclick="flipCameraMode()" title="कॅमेरा बदला">🔄 कॅमेरा बदला</button>
+                </div>
+
+                <div class="rec-progress-bar">
+                    <div class="rec-progress-fill" id="recProgressFill"></div>
+                </div>
+
+                <div class="recorder-footer" id="recFooterControls">
+                    <div id="recControlNormal" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                        <button class="rec-main-btn" id="btnRecToggle" onclick="toggleLiveRecording()" title="Record / Stop">
+                            <div class="rec-inner-icon"></div>
+                        </button>
+                        <span id="recStatusLabel" style="font-size: 0.76rem; color: #94a3b8;">रेकॉर्डिंग सुरू करण्यासाठी दाबा (कमाल ६० से)</span>
+                    </div>
+
+                    <div id="recControlReview" style="display: none; width: 100%; gap: 10px;">
+                        <button onclick="retakeLiveVideo()" style="flex: 1; background: #334155; color: white; border: none; border-radius: 12px; padding: 11px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                            🔄 पुन्हा काढा (Retake)
+                        </button>
+                        <button onclick="confirmLiveVideo()" style="flex: 1.2; background: #10b981; color: white; border: none; border-radius: 12px; padding: 11px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+                            ✅ व्हिडिओ वापरा (Use Video)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1031,6 +1346,7 @@
         let currentActiveScreen = 'chat'; // 'chat' | 'register' | 'tracking'
         let currentActiveTicketId = null;
         let regFormPhotoFile = null;
+        let chatSessionId = 'session_' + Math.random().toString(36).substring(2, 15);
 
         // Try getting actual browser GPS location in background
         if (navigator.geolocation) {
@@ -1106,14 +1422,251 @@
         // ==========================================
         // 2. CHAT PHOTO & VOICE CONTROLS
         // ==========================================
+        let selectedVideoFile = null;
+
         function triggerCamera() {
             document.getElementById('hiddenPhotoInput').click();
+        }
+
+        function triggerVideo() {
+            openVideoChoiceModal();
+        }
+
+        function openVideoChoiceModal() {
+            document.getElementById('videoChoiceModal').style.display = 'flex';
+        }
+
+        function closeVideoChoiceModal() {
+            document.getElementById('videoChoiceModal').style.display = 'none';
+        }
+
+        function startNativeVideoRecording() {
+            closeVideoChoiceModal();
+            const nativeInput = document.getElementById('hiddenLiveVideoInput');
+            if (nativeInput) nativeInput.click();
+        }
+
+        function chooseVideoFromFile() {
+            closeVideoChoiceModal();
+            const fileInput = document.getElementById('hiddenVideoInput');
+            if (fileInput) fileInput.click();
+        }
+
+        // --- IN-APP LIVE VIDEO RECORDER ---
+        let liveMediaStream = null;
+        let liveMediaRecorder = null;
+        let liveRecordedChunks = [];
+        let liveRecordedBlob = null;
+        let liveCurrentFacingMode = 'environment';
+        let liveTimerInterval = null;
+        let liveSecondsElapsed = 0;
+        let liveIsRecording = false;
+
+        async function openInAppRecorder() {
+            closeVideoChoiceModal();
+            const modal = document.getElementById('inAppRecorderModal');
+            modal.style.display = 'flex';
+            resetLiveRecorderState();
+            await startLiveCameraStream(liveCurrentFacingMode);
+        }
+
+        function closeInAppRecorder() {
+            stopLiveRecording(false);
+            stopLiveCameraStream();
+            const modal = document.getElementById('inAppRecorderModal');
+            modal.style.display = 'none';
+        }
+
+        async function startLiveCameraStream(facingMode) {
+            stopLiveCameraStream();
+            const videoElem = document.getElementById('liveCamStream');
+            const previewElem = document.getElementById('liveRecordedPreview');
+            videoElem.style.display = 'block';
+            previewElem.style.display = 'none';
+
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: facingMode },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: true
+                };
+                liveMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (err) {
+                console.warn("[Live Video] Audio+Video failed, trying video only:", err);
+                try {
+                    liveMediaStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: facingMode } }
+                    });
+                } catch (camErr) {
+                    console.error("[Live Video] Camera access denied:", camErr);
+                    alert("⚠️ कॅमेरा सुरू करता आला नाही. कृपया ब्राउझरमध्ये कॅमेरा परवानगी (Allow) द्या किंवा थेट फाईल निवडा.");
+                    closeInAppRecorder();
+                    return;
+                }
+            }
+
+            videoElem.srcObject = liveMediaStream;
+            try { await videoElem.play(); } catch(e) {}
+        }
+
+        function stopLiveCameraStream() {
+            if (liveMediaStream) {
+                liveMediaStream.getTracks().forEach(t => t.stop());
+                liveMediaStream = null;
+            }
+            const videoElem = document.getElementById('liveCamStream');
+            if (videoElem) videoElem.srcObject = null;
+        }
+
+        async function flipCameraMode() {
+            liveCurrentFacingMode = (liveCurrentFacingMode === 'environment') ? 'user' : 'environment';
+            await startLiveCameraStream(liveCurrentFacingMode);
+        }
+
+        function resetLiveRecorderState() {
+            liveSecondsElapsed = 0;
+            liveIsRecording = false;
+            clearInterval(liveTimerInterval);
+            liveRecordedChunks = [];
+            liveRecordedBlob = null;
+
+            document.getElementById('recTimerBadge').style.display = 'none';
+            document.getElementById('recProgressFill').style.width = '0%';
+            document.getElementById('recStatusLabel').innerText = "रेकॉर्डिंग सुरू करण्यासाठी दाबा (कमाल ६० से)";
+            document.getElementById('btnRecToggle').classList.remove('recording');
+
+            document.getElementById('recControlNormal').style.display = 'flex';
+            document.getElementById('recControlReview').style.display = 'none';
+            document.getElementById('btnFlipCam').style.display = 'block';
+        }
+
+        function toggleLiveRecording() {
+            if (!liveIsRecording) {
+                startLiveRecording();
+            } else {
+                stopLiveRecording(true);
+            }
+        }
+
+        function startLiveRecording() {
+            if (!liveMediaStream) {
+                alert("कॅमेरा सुरू नाही.");
+                return;
+            }
+
+            liveRecordedChunks = [];
+            liveSecondsElapsed = 0;
+
+            let mimeType = 'video/webm;codecs=vp8,opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'video/webm';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/mp4';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+                }
+            }
+
+            try {
+                liveMediaRecorder = mimeType ? new MediaRecorder(liveMediaStream, { mimeType }) : new MediaRecorder(liveMediaStream);
+            } catch (recErr) {
+                liveMediaRecorder = new MediaRecorder(liveMediaStream);
+            }
+
+            liveMediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) {
+                    liveRecordedChunks.push(e.data);
+                }
+            };
+
+            liveMediaRecorder.onstop = () => {
+                const recordedMime = liveMediaRecorder.mimeType || 'video/webm';
+                liveRecordedBlob = new Blob(liveRecordedChunks, { type: recordedMime });
+                showLiveRecordedReview();
+            };
+
+            liveMediaRecorder.start(1000);
+            liveIsRecording = true;
+
+            const recBtn = document.getElementById('btnRecToggle');
+            recBtn.classList.add('recording');
+            document.getElementById('recTimerBadge').style.display = 'flex';
+            document.getElementById('btnFlipCam').style.display = 'none';
+            document.getElementById('recStatusLabel').innerText = "🔴 रेकॉर्डिंग सुरू आहे... (थांबवण्यासाठी दाबा)";
+
+            liveTimerInterval = setInterval(() => {
+                liveSecondsElapsed++;
+                const mins = String(Math.floor(liveSecondsElapsed / 60)).padStart(2, '0');
+                const secs = String(liveSecondsElapsed % 60).padStart(2, '0');
+                document.getElementById('recTimerText').innerText = `${mins}:${secs} / 01:00`;
+                const progressPct = Math.min((liveSecondsElapsed / 60) * 100, 100);
+                document.getElementById('recProgressFill').style.width = `${progressPct}%`;
+
+                if (liveSecondsElapsed >= 60) {
+                    stopLiveRecording(true);
+                }
+            }, 1000);
+        }
+
+        function stopLiveRecording(save = true) {
+            if (!liveIsRecording) return;
+            liveIsRecording = false;
+            clearInterval(liveTimerInterval);
+
+            if (liveMediaRecorder && liveMediaRecorder.state !== 'inactive') {
+                liveMediaRecorder.stop();
+            }
+
+            const recBtn = document.getElementById('btnRecToggle');
+            recBtn.classList.remove('recording');
+            document.getElementById('recTimerBadge').style.display = 'none';
+        }
+
+        function showLiveRecordedReview() {
+            const videoElem = document.getElementById('liveCamStream');
+            const previewElem = document.getElementById('liveRecordedPreview');
+
+            videoElem.style.display = 'none';
+            previewElem.style.display = 'block';
+            previewElem.src = URL.createObjectURL(liveRecordedBlob);
+            previewElem.play().catch(()=>{});
+
+            document.getElementById('recControlNormal').style.display = 'none';
+            document.getElementById('recControlReview').style.display = 'flex';
+        }
+
+        function retakeLiveVideo() {
+            resetLiveRecorderState();
+            startLiveCameraStream(liveCurrentFacingMode);
+        }
+
+        function confirmLiveVideo() {
+            if (!liveRecordedBlob) return;
+            const ext = (liveRecordedBlob.type && liveRecordedBlob.type.includes('mp4')) ? '.mp4' : '.webm';
+            const file = new File([liveRecordedBlob], `live_video_${Date.now()}${ext}`, {
+                type: liveRecordedBlob.type || 'video/webm'
+            });
+
+            closeInAppRecorder();
+            onVideoSelected({ target: { files: [file] } });
+            if (currentActiveScreen === 'register') {
+                onRegPhotoSelected({ target: { files: [file] } });
+            }
         }
 
         function onPhotoSelected(event) {
             const file = event.target.files[0];
             if (file) {
                 selectedPhotoFile = file;
+                selectedVideoFile = null;
+                const vIn = document.getElementById('hiddenVideoInput');
+                if (vIn) vIn.value = '';
+                const vIcon = document.getElementById('thumbVideoIcon');
+                if (vIcon) vIcon.style.display = 'none';
+                document.getElementById('thumbImg').style.display = 'inline';
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     document.getElementById('thumbImg').src = e.target.result;
@@ -1124,9 +1677,47 @@
             }
         }
 
+        function onVideoSelected(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert("⚠️ व्हिडिओचा आकार १०MB पेक्षा जास्त आहे. कृपया लहान व्हिडिओ निवडा.");
+                    event.target.value = '';
+                    return;
+                }
+                selectedVideoFile = file;
+                selectedPhotoFile = null;
+                const pIn = document.getElementById('hiddenPhotoInput');
+                if (pIn) pIn.value = '';
+
+                document.getElementById('thumbImg').style.display = 'none';
+                let vIcon = document.getElementById('thumbVideoIcon');
+                if (!vIcon) {
+                    vIcon = document.createElement('span');
+                    vIcon.id = 'thumbVideoIcon';
+                    vIcon.style.fontSize = '1.3rem';
+                    vIcon.style.marginRight = '6px';
+                    const parent = document.getElementById('thumbImg').parentNode;
+                    parent.insertBefore(vIcon, document.getElementById('thumbName'));
+                }
+                vIcon.innerText = '📹';
+                vIcon.style.display = 'inline';
+
+                const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+                document.getElementById('thumbName').innerText = `${file.name} (${sizeMb} MB)`;
+                document.getElementById('previewStrip').style.display = 'flex';
+            }
+        }
+
         function clearAttachedPhoto() {
             selectedPhotoFile = null;
+            selectedVideoFile = null;
             document.getElementById('hiddenPhotoInput').value = '';
+            const vIn = document.getElementById('hiddenVideoInput');
+            if (vIn) vIn.value = '';
+            document.getElementById('thumbImg').style.display = 'inline';
+            const vIcon = document.getElementById('thumbVideoIcon');
+            if (vIcon) vIcon.style.display = 'none';
             document.getElementById('previewStrip').style.display = 'none';
         }
 
@@ -1197,217 +1788,260 @@
             }
         }
 
-        async function triggerVoice() {
-            const input = document.getElementById('messageInput');
+        // ==========================================
+        // 2. LOCAL VOICE INTERACTION LAYER (STT & TTS)
+        // ==========================================
+        let currentVoiceAudio = null;
+        let lastBotAudioBase64 = null;
+
+        function setVoiceState(state, customMsg = null) {
             const micBtn = document.getElementById('micBtn');
             const statusBadge = document.getElementById('listenStatusBadge');
+            const input = document.getElementById('messageInput');
 
-            // 1. If currently recording, clicking again stops and sends immediately
+            if (!statusBadge || !micBtn) return;
+
+            micBtn.classList.remove('mic-recording', 'mic-processing');
+
+            if (state === 'IDLE') {
+                statusBadge.style.display = 'none';
+                micBtn.title = "🎤 बोलण्यासाठी दाबा (Press to speak)";
+                if (input) {
+                    input.placeholder = (selectedVoiceLang === 'mr') ? "समस्या सांगा (किंवा 🎤 बोला)..." : ((selectedVoiceLang === 'hi') ? "समस्या बताएं (या 🎤 बोलें)..." : "Your Message (or speak 🎤)...");
+                }
+            } else if (state === 'RECORDING') {
+                isRecording = true;
+                micBtn.classList.add('mic-recording');
+                statusBadge.style.display = 'flex';
+                statusBadge.style.background = '#dc2626';
+                statusBadge.innerHTML = '<span>🔴</span><span>ऐकत आहे... (Listening...)</span>';
+                if (input) input.placeholder = "🔴 ऐकत आहे... (थांबवण्यासाठी 🎤 वर पुन्हा दाबा)";
+            } else if (state === 'PROCESSING') {
+                statusBadge.style.display = 'flex';
+                statusBadge.style.background = '#d97706';
+                statusBadge.innerHTML = '<span>⏳</span><span>समजून घेत आहे... (Processing...)</span>';
+            } else if (state === 'RESPONSE') {
+                statusBadge.style.display = 'flex';
+                statusBadge.style.background = '#16a34a';
+                statusBadge.innerHTML = '<span>🔊</span><span>उत्तर ऐका (Playing response...)</span>';
+            } else if (state === 'REPLAY') {
+                statusBadge.style.display = 'flex';
+                statusBadge.style.background = '#0284c7';
+                statusBadge.innerHTML = '<span style="cursor:pointer;" onclick="replayLastVoiceResponse()"><span>🔁</span> <span>पुन्हा ऐका (Replay)</span></span>';
+                setTimeout(() => { if (statusBadge.style.display !== 'none' && !isRecording) statusBadge.style.display = 'none'; }, 6000);
+            } else if (state === 'ERROR') {
+                statusBadge.style.display = 'flex';
+                statusBadge.style.background = '#ef4444';
+                statusBadge.innerHTML = `<span>⚠️</span><span>${customMsg || "कृपया पुन्हा प्रयत्न करा"}</span>`;
+                setTimeout(() => { if (!isRecording) statusBadge.style.display = 'none'; }, 4000);
+            }
+        }
+
+        async function triggerVoice() {
+            const input = document.getElementById('messageInput');
+
+            // If already recording, clicking mic again immediately stops and submits
             if (isRecording) {
-                stopRecordingState();
-                const spokenText = input.value.trim();
-                if (spokenText && spokenText.length > 0) {
-                    lastInputWasVoice = true;
-                    showVoiceToast("✅ मेसेज पाठवत आहे...", false);
-                    sendMessage(false);
-                } else {
-                    showVoiceToast("ℹ️ रेकॉर्डिंग थांबवले.", false);
+                if (mediaRecorderInstance && mediaRecorderInstance.state === 'recording') {
+                    mediaRecorderInstance.stop();
                 }
                 return;
             }
 
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-            // 2. Chrome / Edge / Safari / Android: Continuous Native Indic SpeechRecognition
-            if (SpeechRecognition) {
-                try {
-                    const recognition = new SpeechRecognition();
-                    recognitionInstance = recognition;
-                    recognition.continuous = true;
-                    recognition.interimResults = true;
-                    recognition.lang = selectedVoiceLocale;
-
-                    let finalAccumulatedText = '';
-                    let hasSpoken = false;
-
-                    const resetSilenceTimeout = () => {
-                        clearTimeout(silenceDebounceTimer);
-                        silenceDebounceTimer = setTimeout(() => {
-                            if (isRecording && recognitionInstance) {
-                                try { recognitionInstance.stop(); } catch (_) {}
-                            }
-                        }, 2400);
-                    };
-
-                    recognition.onstart = () => {
-                        isRecording = true;
-                        hasSpoken = false;
-                        micBtn.classList.add('mic-recording');
-                        if (statusBadge) {
-                            const langName = selectedVoiceLang === 'mr' ? 'मराठीत' : (selectedVoiceLang === 'hi' ? 'हिंदी में' : 'English');
-                            statusBadge.innerHTML = `<span>🎙️</span><span>भाषिणी AI ऐकत आहे (${langName} बोला...)</span>`;
-                            statusBadge.style.display = 'flex';
-                        }
-                        input.placeholder = "🎙️ बोलत आहात... ऐकत आहे (Listening...)";
-                        showVoiceToast(`🎙️ भाषिणी AI ऐकत आहे... (${selectedVoiceLocale})`, false);
-                        resetSilenceTimeout();
-                    };
-
-                    recognition.onresult = (event) => {
-                        hasSpoken = true;
-                        resetSilenceTimeout();
-                        let interim = '';
-                        for (let i = event.resultIndex; i < event.results.length; ++i) {
-                            if (event.results[i].isFinal) {
-                                finalAccumulatedText += (finalAccumulatedText ? ' ' : '') + event.results[i][0].transcript.trim();
-                            } else {
-                                interim += event.results[i][0].transcript;
-                            }
-                        }
-                        const currentDisplay = finalAccumulatedText + (interim ? ' ' + interim : '');
-                        if (currentDisplay) input.value = currentDisplay.trim();
-                    };
-
-                    recognition.onerror = (event) => {
-                        console.warn("[Voice STT] SpeechRecognition error:", event.error);
-                        if (event.error !== 'no-speech') {
-                            stopRecordingState();
-                            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                                showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया 'Allow' करा.", true);
-                            } else {
-                                showVoiceToast("⚠️ व्हॉईस एरर: " + event.error, true);
-                            }
-                        }
-                    };
-
-                    recognition.onend = () => {
-                        clearTimeout(silenceDebounceTimer);
-                        stopRecordingState();
-                        const spokenText = (finalAccumulatedText || input.value).trim();
-                        if (hasSpoken && spokenText.length > 0) {
-                            input.value = spokenText;
-                            lastInputWasVoice = true;
-                            showVoiceToast("✅ आवाज ओळखला: " + spokenText, false);
-                            setTimeout(() => {
-                                sendMessage(false);
-                            }, 800);
-                        }
-                    };
-
-                    recognition.start();
-                    return;
-                } catch (e) {
-                    console.warn("[Voice STT] SpeechRecognition error, trying MediaRecorder:", e);
-                }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showVoiceToast("⚠️ या ब्राउझरमध्ये मायक्रोफोन उपलब्ध नाही.", true);
+                setVoiceState('ERROR', 'मायक्रोफोन उपलब्ध नाही');
+                return;
             }
 
-            // 3. Fallback for Firefox or browsers without webkitSpeechRecognition: MediaRecorder -> Bhashini Endpoint
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    isRecording = true;
-                    micBtn.classList.add('mic-recording');
-                    if (statusBadge) {
-                        statusBadge.innerHTML = '<span>🎙️</span><span>भाषिणी AI रेकॉर्ड करत आहे...</span>';
-                        statusBadge.style.display = 'flex';
-                    }
-                    input.placeholder = "🎙️ रेकॉर्डिंग सुरू आहे... (थांबवण्यासाठी 🎤 वर दाबा)";
-                    showVoiceToast("🎙️ भाषिणी AI रेकॉर्ड करत आहे... थांबवण्यासाठी 🎤 दाबा.", false);
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                setVoiceState('RECORDING');
+                showVoiceToast("🔴 बोलणे सुरू करा... थांबवण्यासाठी 🎤 पुन्हा दाबा.", false);
 
-                    mediaRecorderInstance = new MediaRecorder(stream);
-                    audioChunks = [];
-                    mediaRecorderInstance.ondataavailable = (e) => {
-                        if (e.data && e.data.size > 0) audioChunks.push(e.data);
-                    };
-                    mediaRecorderInstance.onstop = async () => {
-                        stream.getTracks().forEach(t => t.stop());
-                        if (audioChunks.length > 0) {
-                            showVoiceToast("⏳ भाषिणी AI आवाजाचे रूपांतर करत आहे...", false);
-                            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                            await sendAudioToBhashini(audioBlob);
-                        }
-                    };
-                    mediaRecorderInstance.start();
-                } catch (recErr) {
-                    console.warn("[Voice STT] MediaRecorder error:", recErr);
-                    stopRecordingState();
-                    if (recErr.name === 'NotAllowedError' || recErr.name === 'PermissionDeniedError') {
-                        showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया ब्राऊझरमध्ये 'Allow' करा.", true);
-                    } else {
-                        showVoiceToast("⚠️ मायक्रोफोन सुरू करता आला नाही.", true);
-                    }
+                audioChunks = [];
+                let mimeType = 'audio/webm';
+                if (!MediaRecorder.isTypeSupported('audio/webm')) {
+                    if (MediaRecorder.isTypeSupported('audio/ogg')) mimeType = 'audio/ogg';
+                    else if (MediaRecorder.isTypeSupported('audio/wav')) mimeType = 'audio/wav';
+                    else mimeType = '';
                 }
-            } else {
-                showVoiceToast("⚠️ या ब्राउझरमध्ये व्हॉईस इनपुट उपलब्ध नाही. कृपया Chrome किंवा Edge वापरा.", true);
+
+                mediaRecorderInstance = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
+                mediaRecorderInstance.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorderInstance.onstop = async () => {
+                    stream.getTracks().forEach(track => track.stop());
+                    isRecording = false;
+
+                    if (!audioChunks || audioChunks.length === 0) {
+                        setVoiceState('ERROR', 'कृपया आधी काहीतरी बोला.');
+                        showVoiceToast("कृपया आधी काहीतरी बोला.", true);
+                        return;
+                    }
+
+                    const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
+                    if (audioBlob.size < 200) {
+                        setVoiceState('ERROR', 'कृपया आधी काहीतरी बोला.');
+                        showVoiceToast("कृपया आधी काहीतरी बोला.", true);
+                        return;
+                    }
+
+                    setVoiceState('PROCESSING');
+                    showVoiceToast("⏳ आवाज समजून घेत आहे...", false);
+
+                    await processSpokenAudioLocally(audioBlob);
+                };
+
+                mediaRecorderInstance.start();
+
+            } catch (err) {
+                console.warn("[Voice STT] Mic access error:", err);
+                isRecording = false;
+                setVoiceState('ERROR', 'मायक्रोफोन परवानगी नाकारली.');
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    showVoiceToast("⚠️ मायक्रोफोन परवानगी ब्लॉक आहे! कृपया ब्राऊझरमध्ये 'Allow' करा.", true);
+                } else {
+                    showVoiceToast("⚠️ मायक्रोफोन सुरू करता आला नाही: " + err.message, true);
+                }
             }
         }
 
-        async function sendAudioToBhashini(audioBlob) {
+        async function processSpokenAudioLocally(audioBlob) {
             const input = document.getElementById('messageInput');
             try {
                 const formData = new FormData();
-                formData.append('audio', audioBlob, 'voice_query.webm');
-                formData.append('language', selectedVoiceLang);
+                formData.append('audio', audioBlob, 'citizen_voice.webm');
+                formData.append('language', selectedVoiceLang || 'mr');
                 formData.append('audio_format', 'webm');
 
-                const response = await fetch('/api/v1/voice/stt', {
+                const response = await fetch('/api/v1/voice/transcribe', {
                     method: 'POST',
                     body: formData
                 });
+
                 if (response.ok) {
                     const data = await response.json();
-                    if (data.transcript && data.transcript.trim().length > 0) {
-                        input.value = data.transcript.trim();
-                        showVoiceToast("✅ भाषिणी STT: " + data.transcript.trim(), false);
+                    const transcriptText = (data.text || data.transcript || "").trim();
+
+                    if (transcriptText.length > 0) {
+                        input.value = transcriptText;
                         lastInputWasVoice = true;
-                        setTimeout(() => { sendMessage(false); }, 700);
+
+                        // Display transcript bubble for citizen clarity
+                        renderVoiceTranscriptBanner(transcriptText);
+
+                        setVoiceState('IDLE');
+                        showVoiceToast("✅ आवाज ओळखला: " + transcriptText, false);
+
+                        setTimeout(() => {
+                            sendMessage(false);
+                        }, 500);
                     } else {
-                        showVoiceToast("ℹ️ आवाज स्पष्ट ऐकू आला नाही, कृपया पुन्हा बोला किंवा थेट टाईप करा.", false);
+                        setVoiceState('ERROR', 'मला तुमचं बोलणं नीट समजलं नाही. कृपया पुन्हा स्पष्ट बोला.');
+                        showVoiceToast("मला तुमचं बोलणं नीट समजलं नाही. कृपया पुन्हा स्पष्ट बोला.", true);
                     }
+                } else {
+                    const errData = await response.json().catch(() => ({}));
+                    setVoiceState('ERROR', 'आवाज समजण्यात अडचण आली.');
+                    showVoiceToast("आवाज समजण्यात अडचण आली. कृपया पुन्हा प्रयत्न करा.", true);
                 }
             } catch (err) {
-                console.warn("[Bhashini STT] Network request failed:", err);
-                showVoiceToast("⚠️ भाषिणी सर्व्हरशी संपर्क होऊ शकला नाही.", true);
+                console.error("[Voice STT] Network or server error:", err);
+                setVoiceState('ERROR', 'आवाज समजण्यात अडचण आली.');
+                showVoiceToast("आवाज समजण्यात अडचण आली. कृपया पुन्हा प्रयत्न करा.", true);
             }
+        }
+
+        function renderVoiceTranscriptBanner(transcript) {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+
+            const banner = document.createElement('div');
+            banner.className = 'voice-transcript-banner';
+            banner.style.cssText = `
+                align-self: flex-end;
+                background: rgba(30, 64, 175, 0.08);
+                border: 1px dashed #3b82f6;
+                color: #1e3a8a;
+                border-radius: 12px;
+                padding: 6px 12px;
+                font-size: 0.78rem;
+                margin: 4px 12px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                animation: fadeIn 0.3s ease-in-out;
+            `;
+            banner.innerHTML = `<span>🎤 <em>तुम्ही म्हणालात:</em></span> <strong>"${transcript}"</strong>`;
+            container.appendChild(banner);
+            container.scrollTop = container.scrollHeight;
         }
 
         function stopRecordingState() {
             isRecording = false;
-            const micBtn = document.getElementById('micBtn');
-            const input = document.getElementById('messageInput');
-            const statusBadge = document.getElementById('listenStatusBadge');
-            if (micBtn) micBtn.classList.remove('mic-recording');
-            if (statusBadge) statusBadge.style.display = 'none';
-            if (input) {
-                input.placeholder = (selectedVoiceLang === 'mr') ? "समस्या सांगा (किंवा 🎤 बोला)..." : ((selectedVoiceLang === 'hi') ? "समस्या बताएं (या 🎤 बोलें)..." : "Your Message (or speak 🎤)...");
-            }
-
-            if (recognitionInstance) {
-                try { recognitionInstance.stop(); } catch (_) {}
-                recognitionInstance = null;
-            }
             if (mediaRecorderInstance && mediaRecorderInstance.state !== 'inactive') {
                 try { mediaRecorderInstance.stop(); } catch (_) {}
             }
+            setVoiceState('IDLE');
         }
 
         // ==========================================
-        // VOICE OUTPUT (TTS) & MESSAGE SPEECH PLAYBACK
+        // VOICE OUTPUT (TTS) & AUDIO PLAYER CONTROLS
         // ==========================================
         function playBotVoiceResponse(audioBase64, replyText, lang = 'mr') {
+            if (currentVoiceAudio) {
+                try { currentVoiceAudio.pause(); } catch (_) {}
+                currentVoiceAudio = null;
+            }
+
             if (audioBase64) {
                 try {
+                    lastBotAudioBase64 = audioBase64;
                     const audio = new Audio("data:audio/wav;base64," + audioBase64);
-                    audio.play().catch(e => {
-                        console.warn("[TTS] Audio playback prevented:", e);
+                    currentVoiceAudio = audio;
+
+                    setVoiceState('RESPONSE');
+                    audio.onended = () => {
+                        setVoiceState('REPLAY');
+                    };
+                    audio.onerror = (e) => {
+                        console.warn("[LocalTTS] Audio playback error:", e);
                         fallbackBrowserSpeech(replyText, lang);
+                        setVoiceState('IDLE');
+                    };
+
+                    audio.play().catch(e => {
+                        console.warn("[LocalTTS] Autoplay prevented, waiting for user tap:", e);
+                        setVoiceState('REPLAY');
                     });
                     return;
                 } catch (err) {
-                    console.warn("[TTS] Audio constructor failed, falling back to speech synthesis:", err);
+                    console.warn("[LocalTTS] Audio initialization failed:", err);
                 }
             }
             fallbackBrowserSpeech(replyText, lang);
+        }
+
+        function replayLastVoiceResponse() {
+            if (lastBotAudioBase64) {
+                try {
+                    if (currentVoiceAudio) {
+                        currentVoiceAudio.currentTime = 0;
+                        currentVoiceAudio.play();
+                    } else {
+                        currentVoiceAudio = new Audio("data:audio/wav;base64," + lastBotAudioBase64);
+                        currentVoiceAudio.play();
+                    }
+                    setVoiceState('RESPONSE');
+                    currentVoiceAudio.onended = () => setVoiceState('REPLAY');
+                } catch (e) {
+                    console.warn("[LocalTTS] Replay error:", e);
+                }
+            }
         }
 
         function playBubbleSpeech(btn, lang = 'mr') {
@@ -1426,7 +2060,7 @@
             btn.textContent = '🔊...';
             btn.disabled = true;
 
-            fetch('/api/v1/voice/tts', {
+            fetch('/api/v1/voice/synthesize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: rawText.substring(0, 320), language: lang || 'mr', gender: 'female' })
@@ -1482,6 +2116,7 @@
             formData.append('latitude', defaultLat);
             formData.append('longitude', defaultLng);
             formData.append('citizen_phone', citizenEmail);
+            formData.append('session_id', chatSessionId);
 
             fetch('/api/v1/complaints/chat', {
                 method: 'POST',
@@ -1518,17 +2153,21 @@
             const input = document.getElementById('messageInput');
             const text = (customText !== null) ? customText : input.value.trim();
 
-            if (!text && !selectedPhotoFile && !currentCategoryKey && !forceRegister) {
+            if (!text && !selectedPhotoFile && !selectedVideoFile && !currentCategoryKey && !forceRegister) {
                 return;
             }
 
             const currentTime = formatTime();
 
-            if (text || selectedPhotoFile) {
-                renderUserMessage(text || (selectedPhotoFile ? "📷 Photo uploaded" : ""), selectedPhotoFile, currentTime);
+            if (text || selectedPhotoFile || selectedVideoFile) {
+                let mediaLabel = "";
+                if (selectedPhotoFile) mediaLabel = "📷 Photo uploaded";
+                if (selectedVideoFile) mediaLabel = "📹 Video uploaded (" + selectedVideoFile.name + ")";
+                renderUserMessage(text || mediaLabel, selectedPhotoFile || selectedVideoFile, currentTime);
             }
 
             const currentPhotoFile = selectedPhotoFile;
+            const currentVideoFile = selectedVideoFile;
             input.value = '';
             clearAttachedPhoto();
 
@@ -1548,6 +2187,7 @@
             formData.append('latitude', defaultLat);
             formData.append('longitude', defaultLng);
             formData.append('citizen_phone', citizenEmail);
+            formData.append('session_id', chatSessionId);
 
             if (forceRegister) {
                 formData.append('confirm_register', 'true');
@@ -1556,6 +2196,9 @@
 
             if (currentPhotoFile) {
                 formData.append('photo', currentPhotoFile);
+            }
+            if (currentVideoFile) {
+                formData.append('video', currentVideoFile);
             }
 
             try {
@@ -1583,7 +2226,10 @@
             }
             lastInputWasVoice = false;
 
-            if (data.intent === 'GREETING' || data.intent === 'COMPLAINT_PROCESS_GUIDE' || data.intent === 'CIVIC_KNOWLEDGE_INQUIRY') {
+            if (data.intent === 'VIDEO_CONFIRMATION_REQUIRED' || data.intent === 'MULTIPLE_ISSUES_DETECTED' || (data.buttons && data.buttons.length > 0)) {
+                if (data.category) currentCategoryKey = data.category;
+                renderBotConfirmationPrompt(data, time);
+            } else if (data.intent === 'GREETING' || data.intent === 'COMPLAINT_PROCESS_GUIDE' || data.intent === 'CIVIC_KNOWLEDGE_INQUIRY') {
                 renderBotPlainMessage(data.reply, time, data.language);
             } else if (data.intent === 'CATEGORY_SELECTED' || data.intent === 'CATEGORY_CLARIFICATION_REQUIRED' || data.intent === 'EVIDENCE_REQUIRED') {
                 if (data.category) currentCategoryKey = data.category;
@@ -1600,6 +2246,35 @@
             } else {
                 renderBotPlainMessage(data.reply, time, data.language);
             }
+        }
+
+        function sendConfirmationAction(btnText, btnAction) {
+            const currentTime = formatTime();
+            renderUserMessage(btnText, null, currentTime);
+            showTyping(true);
+
+            const formData = new FormData();
+            formData.append('message', btnText);
+            formData.append('action', btnAction);
+            if (currentCategoryKey) formData.append('category', currentCategoryKey);
+            formData.append('latitude', defaultLat);
+            formData.append('longitude', defaultLng);
+            formData.append('citizen_phone', citizenEmail);
+            formData.append('session_id', chatSessionId);
+
+            fetch('/api/v1/complaints/chat', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                showTyping(false);
+                handleBotChatResponse(data, formatTime());
+            })
+            .catch(err => {
+                showTyping(false);
+                renderBotPlainMessage(`⚠️ Error: ${err.message}`, formatTime());
+            });
         }
 
         // ==========================================
@@ -1631,9 +2306,13 @@
                     'garbage': 'परिसरात कचऱ्याचे साम्राज्य पसरले असून दुर्गंधी सुटली आहे. कचरा कुंडी त्वरित साफ करावी.',
                     'drainage': 'ड्रेनेज चेंबर तुंबले असून सांडपाणी रस्त्यावर वाहत आहे.',
                     'pipeline_water_leakage': 'मुख्य पिण्याच्या पाण्याची पाईपलाईन फुटून प्रचंड पाणी वाया जात आहे.',
+                    'health_sanitation': 'परिसरात अस्वच्छता पसरली असून रोगराईचा धोका आहे, स्वच्छता फवारणी करावी.',
                     'traffic_jams': 'वाहतूक कोंडी झाली असून ट्रॅफिक वॉर्डन नेमण्यात यावा.',
                     'trees': 'झाडाची मोठी फांदी रस्त्यावर कोसळली असून मार्ग अडवला आहे.',
-                    'encroachment': 'पादचारी मार्गावर अनधिकृत अतिक्रमण झाले आहे.'
+                    'electricity': 'विद्युत तारा तुटल्या असून किंवा डीपी उघडी असून धोका निर्माण झाला आहे.',
+                    'encroachment': 'पादचारी मार्गावर अनधिकृत अतिक्रमण झाले आहे.',
+                    'unauthorized_banner_flex': 'सार्वजनिक ठिकाणी अनधिकृत होर्डिंग, बॅनर किंवा फ्लेक्स लावलेले आहेत.',
+                    'noise_pollution': 'परिसरात मोठ्या आवाजात लाऊडस्पीकर सुरू असून ध्वनी प्रदूषणाचा त्रास होत आहे.'
                 };
                 descInput.value = defaultDescriptions[targetCat] || `${catBadge || 'नागरी समस्या'} संदर्भात तात्काळ निवारण करावे.`;
             }
@@ -1671,14 +2350,28 @@
             const file = event.target.files[0];
             if (file) {
                 regFormPhotoFile = file;
-                const reader = new FileReader();
-                reader.onload = (e) => {
+                const isVideo = (file.type && file.type.startsWith('video/')) || /\.(mp4|webm|3gp|mov|avi)$/i.test(file.name);
+                if (isVideo) {
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert("⚠️ व्हिडिओचा आकार १०MB पेक्षा जास्त आहे. कृपया लहान व्हिडिओ निवडा.");
+                        event.target.value = '';
+                        regFormPhotoFile = null;
+                        return;
+                    }
                     const img = document.getElementById('regPreviewImg');
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                    document.getElementById('regUploadNotice').innerText = `✅ फोटो निवडला: ${file.name}`;
-                };
-                reader.readAsDataURL(file);
+                    img.style.display = 'none';
+                    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+                    document.getElementById('regUploadNotice').innerText = `📹 व्हिडिओ जोडला: ${file.name} (${sizeMb} MB)`;
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.getElementById('regPreviewImg');
+                        img.src = e.target.result;
+                        img.style.display = 'block';
+                        document.getElementById('regUploadNotice').innerText = `✅ फोटो निवडला: ${file.name}`;
+                    };
+                    reader.readAsDataURL(file);
+                }
             }
         }
 
@@ -1733,7 +2426,12 @@
             formData.append('citizen_phone', phone);
             if (priority) formData.append('priority', priority);
             if (regFormPhotoFile) {
-                formData.append('photo', regFormPhotoFile);
+                const isVideo = (regFormPhotoFile.type && regFormPhotoFile.type.startsWith('video/')) || /\.(mp4|webm|3gp|mov|avi)$/i.test(regFormPhotoFile.name);
+                if (isVideo) {
+                    formData.append('video', regFormPhotoFile);
+                } else {
+                    formData.append('photo', regFormPhotoFile);
+                }
             }
 
             try {
@@ -1900,16 +2598,20 @@
             const row = document.createElement('div');
             row.className = 'message-row user';
 
-            let imgHtml = '';
+            let mediaHtml = '';
             if (file) {
                 const url = URL.createObjectURL(file);
-                imgHtml = `<img src="${url}" class="msg-image" alt="Attached evidence">`;
+                if (file.type && file.type.startsWith('video/')) {
+                    mediaHtml = `<video src="${url}" controls class="msg-image" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 6px; display: block;"></video>`;
+                } else {
+                    mediaHtml = `<img src="${url}" class="msg-image" alt="Attached evidence">`;
+                }
             }
 
             row.innerHTML = `
                 <div class="message-bubble user">
                     ${text ? `<div>${text}</div>` : ''}
-                    ${imgHtml}
+                    ${mediaHtml}
                     <div class="msg-time">${time}</div>
                 </div>
             `;
@@ -1971,6 +2673,64 @@
                             ${btnText}
                         </button>
                     </div>
+                    <div class="msg-time">${time}</div>
+                </div>
+            `;
+            chatBody.insertBefore(row, typingRow);
+            scrollBottom();
+        }
+
+        function renderBotConfirmationPrompt(data, time) {
+            const chatBody = document.getElementById('chatBody');
+            const typingRow = document.getElementById('typingRow');
+
+            const isMr = (data.language === 'mr');
+            const catBadge = data.category_name || (isMr ? 'नागरी समस्या' : 'Civic Issue');
+
+            let buttonsHtml = '';
+            if (data.buttons && data.buttons.length > 0) {
+                buttonsHtml = '<div class="action-container" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">';
+                data.buttons.forEach((btn) => {
+                    const btnLabel = btn.text || btn.label || "Select";
+                    const isYes = btn.action === 'confirm_video_yes' || btn.action.startsWith('confirm_resolution_yes');
+                    const isNo = btn.action === 'confirm_video_no' || btn.action.startsWith('confirm_resolution_no');
+                    const isRating = btn.action.startsWith('rate_');
+                    let bgStyle = 'background: #ffffff; color: #334155; border: 1.5px solid #cbd5e1; font-weight: 600;';
+                    let icon = '👉 ';
+                    if (isYes) {
+                        bgStyle = 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; font-weight: 700;';
+                        icon = '✅ ';
+                    } else if (isNo) {
+                        bgStyle = 'background: #fff1f2; color: #e11d48; border: 1.5px solid #fecdd3; font-weight: 600;';
+                        icon = '❌ ';
+                    } else if (isRating) {
+                        bgStyle = 'background: #fffbeb; color: #b45309; border: 1.5px solid #fde68a; font-weight: 700;';
+                        icon = '⭐ ';
+                    }
+                    const safeText = btnLabel.replace(/'/g, "\\'");
+                    buttonsHtml += `
+                        <button onclick="sendConfirmationAction('${safeText}', '${btn.action}')"
+                                style="width: 100%; padding: 10px 14px; border-radius: 12px; font-size: 0.88rem; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); ${bgStyle}">
+                            <span>${icon}</span>
+                            <span>${btnLabel}</span>
+                        </button>
+                    `;
+                });
+                buttonsHtml += '</div>';
+            }
+
+            const row = document.createElement('div');
+            row.className = 'message-row bot';
+            row.innerHTML = `
+                <div class="bot-icon-small">🤖</div>
+                <div class="message-bubble bot">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                        <div class="bubble-tag">WARDMITRA AI</div>
+                        <button class="speak-bubble-btn" onclick="playBubbleSpeech(this, '${data.language || 'mr'}')" title="ऐका (Listen)">🔊</button>
+                    </div>
+                    ${data.category ? `<span class="category-badge-pill">📹 ${catBadge}</span>` : ''}
+                    <div style="white-space: pre-line; margin-top: 4px;">${formatMarkdownText(data.reply)}</div>
+                    ${buttonsHtml}
                     <div class="msg-time">${time}</div>
                 </div>
             `;
@@ -2084,6 +2844,33 @@
                 chatBody.scrollTop = chatBody.scrollHeight;
             }, 50);
         }
+
+        async function loadDynamicCategories() {
+            try {
+                const res = await fetch('/api/v1/complaints/categories');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.categories && data.categories.length > 0) {
+                    const select = document.getElementById('regCategory');
+                    if (select) {
+                        const currentVal = select.value;
+                        select.innerHTML = '';
+                        data.categories.forEach(cat => {
+                            const opt = document.createElement('option');
+                            opt.value = cat.key;
+                            opt.textContent = `${cat.name_en} (${cat.name_mr})`;
+                            select.appendChild(opt);
+                        });
+                        if (currentVal && select.querySelector(`option[value="${currentVal}"]`)) {
+                            select.value = currentVal;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[Categories] Dynamic load fallback to static options:', e);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadDynamicCategories);
     </script>
 </body>
 </html>

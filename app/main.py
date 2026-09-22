@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config.settings import settings
 from app.database.session import engine, Base
 from app.database import models
-from app.api.routes import complaint, health, voice
+from app.api.routes import complaint, health, voice, rag
 from app.services.scheduler_service import start_auto_escalation_scheduler, stop_auto_escalation_scheduler
 
 # 1. Initialize SQLite Database Tables on startup
@@ -32,6 +32,8 @@ def _safe_migrate_db():
                 ("verification_status", "VARCHAR(32) DEFAULT 'APPROVED'"),
                 ("fraud_score", "FLOAT DEFAULT 0.0"),
                 ("evidence_valid", "BOOLEAN DEFAULT 1"),
+                ("video_path", "VARCHAR(255)"),
+                ("reopen_reason", "TEXT"),
             ]
             for col_name, col_type in new_cols:
                 if col_name not in cols:
@@ -96,6 +98,7 @@ app.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 app.include_router(complaint.router, prefix="/api/v1")
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(voice.router, prefix="/api/v1")
+app.include_router(rag.router, prefix="/api/v1")
 
 # Direct alias for /api/v1/chat/complaint
 app.add_api_route("/api/v1/chat/complaint", complaint.chat_with_bot, methods=["POST"], tags=["Grievance Redressal"])

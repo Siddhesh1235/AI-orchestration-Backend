@@ -91,6 +91,14 @@ categories:
     description: "Illegal political banners, hoardings, flex obstructing road visibility"
     keywords: ["banner", "flex", "hoarding", "poster", "बॅनर", "फ्लेक्स", "होर्डिंग", "पोस्टर", "जाहिरात"]
 
+  health_sanitation:
+    department: "HEALTH_SWM"
+    department_name_mr: "आरोग्य व स्वच्छता विभाग"
+    department_name_en: "Public Health & Sanitation"
+    sla_hours: 24
+    description: "Unclean public toilets, open defecation, mosquito breeding, pest infestation"
+    keywords: ["sanitation", "toilet", "public toilet", "hygiene", "mosquito", "pest", "शौचालय", "स्वच्छता", "डास", "दुर्गंधी"]
+
 departments:
   HEALTH_SWM:
     head: "Dr. K. S. Shinde"

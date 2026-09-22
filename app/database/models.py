@@ -16,8 +16,11 @@ class ComplaintStatus(str, enum.Enum):
     ASSIGNED = "ASSIGNED"
     IN_PROGRESS = "IN_PROGRESS"
     RESOLVED = "RESOLVED"
+    CITIZEN_CONFIRMATION = "CITIZEN_CONFIRMATION"
     CLOSED = "CLOSED"
+    REOPENED = "REOPENED"
     REVIEW_REQUIRED = "REVIEW_REQUIRED"
+    CANCELLED = "CANCELLED"
 
 
 class PriorityLevel(str, enum.Enum):
@@ -55,6 +58,7 @@ class Complaint(Base):
 
     # Media
     photo_path = Column(String(255), nullable=True)
+    video_path = Column(String(255), nullable=True)
 
     # AI Detection & Classification
     detected_category = Column(String(64), nullable=False)
@@ -110,6 +114,7 @@ class Complaint(Base):
     rating = Column(Integer, nullable=True)  # 1 to 5 stars
     feedback_comments = Column(Text, nullable=True)
     confirmed_resolved = Column(Boolean, default=False)
+    reopen_reason = Column(Text, nullable=True)
 
     # Audit Timestamps
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -117,3 +122,20 @@ class Complaint(Base):
 
     def __repr__(self):
         return f"<Complaint ticket_id={self.ticket_id} status={self.status} priority={self.priority} escalation={self.escalation_level}>"
+
+
+class ComplaintAuditHistory(Base):
+    __tablename__ = "complaint_audit_history"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    complaint_id = Column(Integer, nullable=False, index=True)
+    ticket_id = Column(String(64), nullable=False, index=True)
+    old_status = Column(String(64), nullable=True)
+    new_status = Column(String(64), nullable=False)
+    changed_by = Column(String(128), nullable=True)
+    reason = Column(Text, nullable=True)
+    extra_metadata = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    def __repr__(self):
+        return f"<ComplaintAuditHistory ticket={self.ticket_id} {self.old_status}->{self.new_status}>"

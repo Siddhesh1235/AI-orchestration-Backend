@@ -89,6 +89,13 @@ def get_streetlight_evidence_prompt(lang: str = "en") -> str:
     return "Please send a clear photo of the streetlight or the related electrical/meter box."
 
 
+try:
+    from app.config.category_registry import normalize_category_key, get_category_info
+except ImportError:
+    normalize_category_key = None
+    get_category_info = None
+
+
 def get_category_clarification_prompt(category: str, lang: str = "en") -> str:
     """Returns clarification question for bare category selections."""
     cat_key = (category or "").lower().strip()
@@ -96,6 +103,20 @@ def get_category_clarification_prompt(category: str, lang: str = "en") -> str:
     if prompts:
         return prompts.get(lang, prompts["en"])
     
+    if get_category_info and normalize_category_key:
+        norm = normalize_category_key(cat_key)
+        info = get_category_info(norm)
+        if info:
+            if lang == "mr" and "clarification_prompt_mr" in info:
+                return info["clarification_prompt_mr"]
+            elif lang == "hi" and "clarification_prompt_hi" in info:
+                return info["clarification_prompt_hi"]
+            elif "clarification_prompt_en" in info:
+                return info["clarification_prompt_en"]
+    
     if lang == "mr":
         return f"कृपया {cat_key} संदर्भातील आपली नेमकी समस्या आणि ठिकाण सांगा."
+    if lang == "hi":
+        return f"कृपया {cat_key} से संबंधित अपनी सटीक समस्या और स्थान बताएं।"
     return f"Please describe the specific issue with {cat_key} and its location."
+

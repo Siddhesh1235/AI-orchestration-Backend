@@ -32,9 +32,12 @@ class ComplaintRegisterResponse(BaseModel):
     hod_name: Optional[str] = None
     status: str
     photo_path: Optional[str] = None
+    video_path: Optional[str] = None
+    video_details: Optional[dict] = None
     is_duplicate: bool = False
     repeat_count: int = 1
     reopen_count: int = 0
+    reopen_reason: Optional[str] = None
     is_fraud: bool = False
     fraud_reason: Optional[str] = None
     moderation_status: Optional[str] = "PASSED"
@@ -70,6 +73,7 @@ class ComplaintStatusResponse(BaseModel):
     longitude: Optional[float] = None
     description: str
     photo_path: Optional[str] = None
+    video_path: Optional[str] = None
     created_at: datetime
     sla_hours: int
     sla_deadline: Optional[datetime] = None
@@ -78,6 +82,7 @@ class ComplaintStatusResponse(BaseModel):
     is_duplicate: bool = False
     repeat_count: int = 1
     reopen_count: int = 0
+    reopen_reason: Optional[str] = None
     is_fraud: bool = False
     fraud_reason: Optional[str] = None
     moderation_status: Optional[str] = "PASSED"

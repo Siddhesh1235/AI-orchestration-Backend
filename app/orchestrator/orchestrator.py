@@ -26,6 +26,7 @@ from app.orchestrator.decision_engine import verification_engine
 from app.services.fraud_service import duplicate_service
 from app.services.notification_service import notification_service
 from app.services.ward_service import ward_service
+from app.services.complaint_status_service import complaint_status_service
 from app.database.models import Complaint, ComplaintStatus, EscalationLevel, PriorityLevel
 
 logger = logging.getLogger("pcms.orchestrator")
@@ -36,6 +37,7 @@ class GrievanceOrchestrator:
         self,
         db: Session,
         description: str,
+        category: Optional[str] = None,
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
         citizen_phone: Optional[str] = None,
@@ -43,7 +45,9 @@ class GrievanceOrchestrator:
         photo_bytes: Optional[bytes] = None,
         priority: Optional[str] = None,
         allow_duplicate_override: bool = False,
-        ward_number: Optional[int] = None
+        ward_number: Optional[int] = None,
+        video_path: Optional[str] = None,
+        existing_photo_path: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Executes end-to-end Grievance Registration Pipeline with strict Verification Gate.
@@ -51,8 +55,11 @@ class GrievanceOrchestrator:
         saved_photo_path = None
         is_simulated = False
 
-        # Step 1: Save uploaded photo if present
-        if photo_filename and photo_bytes:
+        # Step 1: Save uploaded photo or use existing evidence frame
+        if existing_photo_path and os.path.exists(existing_photo_path):
+            saved_photo_path = existing_photo_path
+            logger.info(f"[Orchestrator] Using existing grievance evidence image: {saved_photo_path}")
+        elif photo_filename and photo_bytes:
             unique_filename = f"{routing_agent.generate_ticket_id()}_{photo_filename}"
             target_path = Path(settings.UPLOAD_DIR) / unique_filename
             with open(target_path, "wb") as f:
@@ -81,6 +88,7 @@ class GrievanceOrchestrator:
                 longitude=longitude,
                 ward_number=None,
                 photo_path=saved_photo_path,
+                video_path=video_path,
                 detected_category="rejected_inappropriate_content",
                 confidence_score=0.0,
                 is_simulated=False,
@@ -127,6 +135,7 @@ class GrievanceOrchestrator:
                 "hod_name": "N/A",
                 "status": "REJECTED",
                 "photo_path": saved_photo_path,
+                "video_path": video_path,
                 "is_duplicate": False,
                 "repeat_count": 0,
                 "reopen_count": 0,
@@ -138,9 +147,14 @@ class GrievanceOrchestrator:
             }
 
         # Step 3: NLP Analysis (Language & Intent & Category)
-        nlp_result = nlp_agent.extract_intent_and_category(description)
-        detected_category = nlp_result.get("category") or "pothole"
-        confidence = nlp_result.get("confidence", 0.70) or 0.70
+        if category and category.lower().strip() not in ["", "none", "other"]:
+            from app.config.category_registry import normalize_category_key
+            detected_category = normalize_category_key(category)
+            confidence = 0.95
+        else:
+            nlp_result = nlp_agent.extract_intent_and_category(description)
+            detected_category = nlp_result.get("category") or "pothole"
+            confidence = nlp_result.get("confidence", 0.70) or 0.70
         evidence_valid = True
         img_result = None
 
@@ -203,6 +217,7 @@ class GrievanceOrchestrator:
                 citizen_phone=citizen_phone
             )
             notification_service.notify_status_change(existing_match)
+            notification_service.notify_duplicate_upvote(existing_match, citizen_phone)
 
             return {
                 "ticket_id": existing_match.ticket_id,
@@ -319,6 +334,7 @@ class GrievanceOrchestrator:
             longitude=longitude,
             ward_number=ward_number,
             photo_path=saved_photo_path,
+            video_path=video_path,
             detected_category=detected_category,
             confidence_score=confidence,
             is_simulated=is_simulated,
@@ -351,6 +367,17 @@ class GrievanceOrchestrator:
         db.add(complaint)
         db.commit()
         db.refresh(complaint)
+
+        # Record initial immutable audit trail
+        try:
+            complaint_status_service.record_initial_registration(
+                db=db,
+                complaint=complaint,
+                changed_by=f"CITIZEN: {citizen_phone or 'Anonymous'}",
+                notes=f"Registered complaint in ward {complaint.ward_number}"
+            )
+        except Exception as audit_err:
+            logger.error(f"[Orchestrator] Failed to record initial audit log: {audit_err}")
 
         logger.info(
             f"[Orchestrator] Grievance {ticket_id} [{verification_status}] Priority={priority_code} "
@@ -399,6 +426,7 @@ class GrievanceOrchestrator:
             "hod_name": complaint.hod_name,
             "status": complaint.status.value,
             "photo_path": complaint.photo_path,
+            "video_path": complaint.video_path,
             "is_duplicate": False,
             "repeat_count": 1,
             "reopen_count": 0,

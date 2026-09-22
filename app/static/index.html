@@ -548,6 +548,10 @@
             border-top: 1px solid #e2e8f0;
             z-index: 10;
         }
+        .chat-bottom-bar input[type="file"],
+        #tabRaiseView input[type="file"] {
+            display: none !important;
+        }
         .circle-btn {
             width: 38px;
             height: 38px;
@@ -770,7 +774,226 @@
         }
 
         #hiddenChatFile { display: none; }
+        #hiddenChatVideoFile { display: none; }
+        #hiddenChatLiveVideoFile { display: none; }
         #hiddenFormFile { display: none; }
+
+        /* Video Selection & In-App Recorder Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        .action-sheet-box {
+            background: #ffffff;
+            width: 100%;
+            max-width: 360px;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUpModal {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .action-sheet-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0b3b64;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-sheet-desc {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+        .action-option-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: left;
+        }
+        .action-option-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        .action-option-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .action-option-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .action-option-sub {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 1px;
+        }
+        .action-cancel-btn {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 10px;
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-top: 4px;
+        }
+        .action-cancel-btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* In-App Recorder Modal */
+        .recorder-box {
+            background: #0f172a;
+            color: white;
+            width: 100%;
+            max-width: 380px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .recorder-header {
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1e293b;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .recorder-viewfinder {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .recorder-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .rec-timer-badge {
+            position: absolute;
+            top: 12px;
+            left: 14px;
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(4px);
+            letter-spacing: 0.5px;
+        }
+        .rec-cam-flip {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+        .rec-progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #334155;
+        }
+        .rec-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #ef4444;
+            transition: width 0.2s linear;
+        }
+        .recorder-footer {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            background: #1e293b;
+        }
+        .rec-main-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            background: #ef4444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, background 0.15s;
+            outline: none;
+        }
+        .rec-main-btn:hover {
+            transform: scale(1.05);
+        }
+        .rec-main-btn:active {
+            transform: scale(0.95);
+        }
+        .rec-main-btn.recording {
+            background: #ffffff;
+            border-color: #ef4444;
+            animation: pulse-red 1.2s infinite;
+        }
+        .rec-inner-icon {
+            width: 22px;
+            height: 22px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        .rec-main-btn.recording .rec-inner-icon {
+            background: #ef4444;
+            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+        }
     </style>
 </head>
 <body>
@@ -916,7 +1139,13 @@
                     <button class="circle-btn" onclick="triggerChatCamera()" title="Upload Photo">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                     </button>
-                    <input type="file" id="hiddenChatFile" accept="image/*" onchange="onChatPhotoSelected(event)">
+                    <input type="file" id="hiddenChatFile" accept="image/*" onchange="onChatPhotoSelected(event)" style="display: none;">
+
+                    <button class="circle-btn" onclick="triggerChatVideo()" title="Upload Video (व्हिडिओ जोडा)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                    </button>
+                    <input type="file" id="hiddenChatVideoFile" accept="video/mp4,video/webm,video/3gpp,video/*" onchange="onChatVideoSelected(event)" style="display: none;">
+                    <input type="file" id="hiddenChatLiveVideoFile" accept="video/*" capture="environment" onchange="onChatVideoSelected(event)" style="display: none;">
 
                     <button class="circle-btn" onclick="triggerChatVoice()" id="chatMicBtn" title="Voice Input">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
@@ -950,12 +1179,12 @@
                     </div>
 
                     <div>
-                        <label class="form-label">समस्येचा फोटो (Photo Evidence):</label>
+                        <label class="form-label">समस्येचा फोटो किंवा व्हिडिओ (Photo / Video Evidence):</label>
                         <div class="upload-dropzone" onclick="document.getElementById('hiddenFormFile').click()">
-                            <p id="formUploadNotice" style="font-size: 0.85rem; color: #64748b;">📷 फोटो निवडण्यासाठी येथे टॅप करा</p>
+                            <p id="formUploadNotice" style="font-size: 0.85rem; color: #64748b;">📷 / 📹 फोटो किंवा व्हिडिओ निवडण्यासाठी येथे टॅप करा (कमाल १० MB)</p>
                             <img id="formPreviewImg" style="display:none; max-height: 120px; border-radius: 8px; margin-top: 6px; margin-left: auto; margin-right: auto;" alt="Preview">
                         </div>
-                        <input type="file" id="hiddenFormFile" accept="image/*" onchange="onFormPhotoSelected(event)">
+                        <input type="file" id="hiddenFormFile" accept="image/*,video/mp4,video/webm,video/3gpp,video/*" onchange="onFormPhotoSelected(event)" style="display: none;">
                     </div>
 
                     <div>
@@ -1093,6 +1322,89 @@
             <div class="nav-key triangle"></div>
         </div>
 
+        <!-- Video Options Modal (Action Sheet) -->
+        <div class="modal-overlay" id="indexVideoChoiceModal" onclick="if(event.target===this) closeIndexVideoChoiceModal()">
+            <div class="action-sheet-box">
+                <div class="action-sheet-title">
+                    <span>📹</span>
+                    <span>व्हिडिओ पुरावा जोडा (Add Video)</span>
+                </div>
+                <div class="action-sheet-desc">
+                    नागरी समस्येचा व्हिडिओ थेट कॅमेऱ्याने रेकॉर्ड करा किंवा गॅलरीतून निवडा:
+                </div>
+
+                <div class="action-option-btn" onclick="startIndexNativeVideoRecording()">
+                    <div class="action-option-icon" style="background: #fee2e2; color: #dc2626;">📱</div>
+                    <div>
+                        <div class="action-option-title">थेट फोन कॅमेरा (Phone Camera)</div>
+                        <div class="action-option-sub">मोबाईलचा कॅमेरा थेट व्हिडिओ मोडमध्ये उघडा</div>
+                    </div>
+                </div>
+
+                <div class="action-option-btn" onclick="openIndexInAppRecorder()">
+                    <div class="action-option-icon" style="background: #e0f2fe; color: #0284c7;">🎥</div>
+                    <div>
+                        <div class="action-option-title">इन-ॲप लाईव्ह रेकॉर्डर (Live Viewfinder)</div>
+                        <div class="action-option-sub">स्क्रीनवरच थेट व्हिडिओ रेकॉर्ड करा</div>
+                    </div>
+                </div>
+
+                <div class="action-option-btn" onclick="chooseIndexVideoFromFile()">
+                    <div class="action-option-icon" style="background: #f1f5f9; color: #475569;">📁</div>
+                    <div>
+                        <div class="action-option-title">गॅलरी / फाईलमधून निवडा (Gallery / Files)</div>
+                        <div class="action-option-sub">मोबाईल किंवा कॉम्प्युटरमधील सेव्ह फाईल निवडा</div>
+                    </div>
+                </div>
+
+                <button class="action-cancel-btn" onclick="closeIndexVideoChoiceModal()">✕ रद्द करा (Cancel)</button>
+            </div>
+        </div>
+
+        <!-- In-App Live Video Recorder Modal -->
+        <div class="modal-overlay" id="indexInAppRecorderModal" onclick="if(event.target===this) closeIndexInAppRecorder()">
+            <div class="recorder-box">
+                <div class="recorder-header">
+                    <div style="font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <span>🎥</span>
+                        <span>लाईव्ह व्हिडिओ रेकॉर्डर</span>
+                    </div>
+                    <button onclick="closeIndexInAppRecorder()" style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">✕</button>
+                </div>
+
+                <div class="recorder-viewfinder">
+                    <video id="indexLiveCamStream" class="recorder-video" autoplay playsinline muted></video>
+                    <video id="indexLiveRecordedPreview" class="recorder-video" controls playsinline style="display:none;"></video>
+                    <div class="rec-timer-badge" id="indexRecTimerBadge" style="display:none;">
+                        <span style="width: 8px; height: 8px; border-radius: 50%; background: white; animation: pulseDot 1s infinite;"></span>
+                        <span id="indexRecTimerText">00:00 / 01:00</span>
+                    </div>
+                    <button class="rec-cam-flip" id="indexBtnFlipCam" onclick="flipIndexCameraMode()" title="कॅमेरा बदला">🔄 कॅमेरा बदला</button>
+                </div>
+
+                <div class="rec-progress-bar">
+                    <div class="rec-progress-fill" id="indexRecProgressFill"></div>
+                </div>
+
+                <div class="recorder-footer" id="indexRecFooterControls">
+                    <div id="indexRecControlNormal" style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                        <button class="rec-main-btn" id="indexBtnRecToggle" onclick="toggleIndexLiveRecording()" title="Record / Stop">
+                            <div class="rec-inner-icon"></div>
+                        </button>
+                        <span id="indexRecStatusLabel" style="font-size: 0.76rem; color: #94a3b8;">रेकॉर्डिंग सुरू करण्यासाठी दाबा (कमाल ६० से)</span>
+                    </div>
+
+                    <div id="indexRecControlReview" style="display: none; width: 100%; gap: 10px;">
+                        <button onclick="retakeIndexLiveVideo()" style="flex: 1; background: #334155; color: white; border: none; border-radius: 12px; padding: 11px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                            🔄 पुन्हा काढा (Retake)
+                        </button>
+                        <button onclick="confirmIndexLiveVideo()" style="flex: 1.2; background: #10b981; color: white; border: none; border-radius: 12px; padding: 11px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+                            ✅ व्हिडिओ वापरा (Use Video)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1111,7 +1423,9 @@
         let currentLat = 18.6010;
         let currentLng = 73.7630;
         let chatPhotoFile = null;
+        let chatVideoFile = null;
         let formPhotoFile = null;
+        let formVideoFile = null;
 
         // Auto GPS capture
         function captureGPSLocation() {
@@ -1185,10 +1499,245 @@
             document.getElementById('hiddenChatFile').click();
         }
 
+        function triggerChatVideo() {
+            openIndexVideoChoiceModal();
+        }
+
+        function openIndexVideoChoiceModal() {
+            document.getElementById('indexVideoChoiceModal').style.display = 'flex';
+        }
+
+        function closeIndexVideoChoiceModal() {
+            document.getElementById('indexVideoChoiceModal').style.display = 'none';
+        }
+
+        function startIndexNativeVideoRecording() {
+            closeIndexVideoChoiceModal();
+            const nativeInput = document.getElementById('hiddenChatLiveVideoFile');
+            if (nativeInput) nativeInput.click();
+        }
+
+        function chooseIndexVideoFromFile() {
+            closeIndexVideoChoiceModal();
+            const fileInput = document.getElementById('hiddenChatVideoFile');
+            if (fileInput) fileInput.click();
+        }
+
+        // --- IN-APP LIVE VIDEO RECORDER (INDEX) ---
+        let indexLiveMediaStream = null;
+        let indexLiveMediaRecorder = null;
+        let indexLiveRecordedChunks = [];
+        let indexLiveRecordedBlob = null;
+        let indexLiveCurrentFacingMode = 'environment';
+        let indexLiveTimerInterval = null;
+        let indexLiveSecondsElapsed = 0;
+        let indexLiveIsRecording = false;
+
+        async function openIndexInAppRecorder() {
+            closeIndexVideoChoiceModal();
+            const modal = document.getElementById('indexInAppRecorderModal');
+            modal.style.display = 'flex';
+            resetIndexLiveRecorderState();
+            await startIndexLiveCameraStream(indexLiveCurrentFacingMode);
+        }
+
+        function closeIndexInAppRecorder() {
+            stopIndexLiveRecording(false);
+            stopIndexLiveCameraStream();
+            const modal = document.getElementById('indexInAppRecorderModal');
+            modal.style.display = 'none';
+        }
+
+        async function startIndexLiveCameraStream(facingMode) {
+            stopIndexLiveCameraStream();
+            const videoElem = document.getElementById('indexLiveCamStream');
+            const previewElem = document.getElementById('indexLiveRecordedPreview');
+            videoElem.style.display = 'block';
+            previewElem.style.display = 'none';
+
+            try {
+                const constraints = {
+                    video: {
+                        facingMode: { ideal: facingMode },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: true
+                };
+                indexLiveMediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (err) {
+                console.warn("[Index Live Video] Audio+Video failed, trying video only:", err);
+                try {
+                    indexLiveMediaStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: facingMode } }
+                    });
+                } catch (camErr) {
+                    console.error("[Index Live Video] Camera access denied:", camErr);
+                    alert("⚠️ कॅमेरा सुरू करता आला नाही. कृपया ब्राउझरमध्ये कॅमेरा परवानगी (Allow) द्या किंवा थेट फाईल निवडा.");
+                    closeIndexInAppRecorder();
+                    return;
+                }
+            }
+
+            videoElem.srcObject = indexLiveMediaStream;
+            try { await videoElem.play(); } catch(e) {}
+        }
+
+        function stopIndexLiveCameraStream() {
+            if (indexLiveMediaStream) {
+                indexLiveMediaStream.getTracks().forEach(t => t.stop());
+                indexLiveMediaStream = null;
+            }
+            const videoElem = document.getElementById('indexLiveCamStream');
+            if (videoElem) videoElem.srcObject = null;
+        }
+
+        async function flipIndexCameraMode() {
+            indexLiveCurrentFacingMode = (indexLiveCurrentFacingMode === 'environment') ? 'user' : 'environment';
+            await startIndexLiveCameraStream(indexLiveCurrentFacingMode);
+        }
+
+        function resetIndexLiveRecorderState() {
+            indexLiveSecondsElapsed = 0;
+            indexLiveIsRecording = false;
+            clearInterval(indexLiveTimerInterval);
+            indexLiveRecordedChunks = [];
+            indexLiveRecordedBlob = null;
+
+            document.getElementById('indexRecTimerBadge').style.display = 'none';
+            document.getElementById('indexRecProgressFill').style.width = '0%';
+            document.getElementById('indexRecStatusLabel').innerText = "रेकॉर्डिंग सुरू करण्यासाठी दाबा (कमाल ६० से)";
+            document.getElementById('indexBtnRecToggle').classList.remove('recording');
+
+            document.getElementById('indexRecControlNormal').style.display = 'flex';
+            document.getElementById('indexRecControlReview').style.display = 'none';
+            document.getElementById('indexBtnFlipCam').style.display = 'block';
+        }
+
+        function toggleIndexLiveRecording() {
+            if (!indexLiveIsRecording) {
+                startIndexLiveRecording();
+            } else {
+                stopIndexLiveRecording(true);
+            }
+        }
+
+        function startIndexLiveRecording() {
+            if (!indexLiveMediaStream) {
+                alert("कॅमेरा सुरू नाही.");
+                return;
+            }
+
+            indexLiveRecordedChunks = [];
+            indexLiveSecondsElapsed = 0;
+
+            let mimeType = 'video/webm;codecs=vp8,opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'video/webm';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/mp4';
+                    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+                }
+            }
+
+            try {
+                indexLiveMediaRecorder = mimeType ? new MediaRecorder(indexLiveMediaStream, { mimeType }) : new MediaRecorder(indexLiveMediaStream);
+            } catch (recErr) {
+                indexLiveMediaRecorder = new MediaRecorder(indexLiveMediaStream);
+            }
+
+            indexLiveMediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) {
+                    indexLiveRecordedChunks.push(e.data);
+                }
+            };
+
+            indexLiveMediaRecorder.onstop = () => {
+                const recordedMime = indexLiveMediaRecorder.mimeType || 'video/webm';
+                indexLiveRecordedBlob = new Blob(indexLiveRecordedChunks, { type: recordedMime });
+                showIndexLiveRecordedReview();
+            };
+
+            indexLiveMediaRecorder.start(1000);
+            indexLiveIsRecording = true;
+
+            const recBtn = document.getElementById('indexBtnRecToggle');
+            recBtn.classList.add('recording');
+            document.getElementById('indexRecTimerBadge').style.display = 'flex';
+            document.getElementById('indexBtnFlipCam').style.display = 'none';
+            document.getElementById('indexRecStatusLabel').innerText = "🔴 रेकॉर्डिंग सुरू आहे... (थांबवण्यासाठी दाबा)";
+
+            indexLiveTimerInterval = setInterval(() => {
+                indexLiveSecondsElapsed++;
+                const mins = String(Math.floor(indexLiveSecondsElapsed / 60)).padStart(2, '0');
+                const secs = String(indexLiveSecondsElapsed % 60).padStart(2, '0');
+                document.getElementById('indexRecTimerText').innerText = `${mins}:${secs} / 01:00`;
+                const progressPct = Math.min((indexLiveSecondsElapsed / 60) * 100, 100);
+                document.getElementById('indexRecProgressFill').style.width = `${progressPct}%`;
+
+                if (indexLiveSecondsElapsed >= 60) {
+                    stopIndexLiveRecording(true);
+                }
+            }, 1000);
+        }
+
+        function stopIndexLiveRecording(save = true) {
+            if (!indexLiveIsRecording) return;
+            indexLiveIsRecording = false;
+            clearInterval(indexLiveTimerInterval);
+
+            if (indexLiveMediaRecorder && indexLiveMediaRecorder.state !== 'inactive') {
+                indexLiveMediaRecorder.stop();
+            }
+
+            const recBtn = document.getElementById('indexBtnRecToggle');
+            recBtn.classList.remove('recording');
+            document.getElementById('indexRecTimerBadge').style.display = 'none';
+        }
+
+        function showIndexLiveRecordedReview() {
+            const videoElem = document.getElementById('indexLiveCamStream');
+            const previewElem = document.getElementById('indexLiveRecordedPreview');
+
+            videoElem.style.display = 'none';
+            previewElem.style.display = 'block';
+            previewElem.src = URL.createObjectURL(indexLiveRecordedBlob);
+            previewElem.play().catch(()=>{});
+
+            document.getElementById('indexRecControlNormal').style.display = 'none';
+            document.getElementById('indexRecControlReview').style.display = 'flex';
+        }
+
+        function retakeIndexLiveVideo() {
+            resetIndexLiveRecorderState();
+            startIndexLiveCameraStream(indexLiveCurrentFacingMode);
+        }
+
+        function confirmIndexLiveVideo() {
+            if (!indexLiveRecordedBlob) return;
+            const ext = (indexLiveRecordedBlob.type && indexLiveRecordedBlob.type.includes('mp4')) ? '.mp4' : '.webm';
+            const file = new File([indexLiveRecordedBlob], `live_video_${Date.now()}${ext}`, {
+                type: indexLiveRecordedBlob.type || 'video/webm'
+            });
+
+            closeIndexInAppRecorder();
+            onChatVideoSelected({ target: { files: [file] } });
+            if (currentActiveTab === 'raise') {
+                onFormPhotoSelected({ target: { files: [file] } });
+            }
+        }
+
         function onChatPhotoSelected(event) {
             const file = event.target.files[0];
             if (file) {
                 chatPhotoFile = file;
+                chatVideoFile = null;
+                const vIn = document.getElementById('hiddenChatVideoFile');
+                if (vIn) vIn.value = '';
+                const vIcon = document.getElementById('chatThumbVideoIcon');
+                if (vIcon) vIcon.style.display = 'none';
+                document.getElementById('chatThumbImg').style.display = 'inline';
+
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     document.getElementById('chatThumbImg').src = e.target.result;
@@ -1199,9 +1748,47 @@
             }
         }
 
+        function onChatVideoSelected(event) {
+            const file = event.target.files[0];
+            if (file) {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert("⚠️ व्हिडिओचा आकार १०MB पेक्षा जास्त आहे. कृपया लहान व्हिडिओ निवडा.");
+                    event.target.value = '';
+                    return;
+                }
+                chatVideoFile = file;
+                chatPhotoFile = null;
+                const pIn = document.getElementById('hiddenChatFile');
+                if (pIn) pIn.value = '';
+
+                document.getElementById('chatThumbImg').style.display = 'none';
+                let vIcon = document.getElementById('chatThumbVideoIcon');
+                if (!vIcon) {
+                    vIcon = document.createElement('span');
+                    vIcon.id = 'chatThumbVideoIcon';
+                    vIcon.style.fontSize = '1.3rem';
+                    vIcon.style.marginRight = '6px';
+                    const parent = document.getElementById('chatThumbImg').parentNode;
+                    parent.insertBefore(vIcon, document.getElementById('chatThumbName'));
+                }
+                vIcon.innerText = '📹';
+                vIcon.style.display = 'inline';
+
+                const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+                document.getElementById('chatThumbName').innerText = `${file.name} (${sizeMb} MB)`;
+                document.getElementById('chatAttachmentBar').style.display = 'flex';
+            }
+        }
+
         function clearChatPhoto() {
             chatPhotoFile = null;
+            chatVideoFile = null;
             document.getElementById('hiddenChatFile').value = '';
+            const vIn = document.getElementById('hiddenChatVideoFile');
+            if (vIn) vIn.value = '';
+            document.getElementById('chatThumbImg').style.display = 'inline';
+            const vIcon = document.getElementById('chatThumbVideoIcon');
+            if (vIcon) vIcon.style.display = 'none';
             document.getElementById('chatAttachmentBar').style.display = 'none';
         }
 
@@ -1301,6 +1888,7 @@
 
         let indexCategoryKey = null;
         let indexCategoryLabel = null;
+        let indexChatSessionId = 'session_' + Math.random().toString(36).substring(2, 15);
 
         function selectIndexCategory(catKey, catLabel) {
             indexCategoryKey = catKey;
@@ -1315,6 +1903,7 @@
             formData.append('latitude', currentLat);
             formData.append('longitude', currentLng);
             formData.append('citizen_phone', userEmail);
+            formData.append('session_id', indexChatSessionId);
 
             fetch('/api/v1/complaints/chat', {
                 method: 'POST',
@@ -1351,15 +1940,19 @@
             const input = document.getElementById('chatInputText');
             const text = (customText !== null) ? customText : input.value.trim();
 
-            if (!text && !chatPhotoFile && !indexCategoryKey && !forceRegister) return;
+            if (!text && !chatPhotoFile && !chatVideoFile && !indexCategoryKey && !forceRegister) return;
 
             const timeStr = getFormattedTime();
 
-            if (text || chatPhotoFile) {
-                renderUserBubble(text || (chatPhotoFile ? "📷 Photo evidence" : ""), chatPhotoFile, timeStr);
+            if (text || chatPhotoFile || chatVideoFile) {
+                let mediaLabel = "";
+                if (chatPhotoFile) mediaLabel = "📷 Photo evidence";
+                if (chatVideoFile) mediaLabel = "📹 Video evidence (" + chatVideoFile.name + ")";
+                renderUserBubble(text || mediaLabel, chatPhotoFile || chatVideoFile, timeStr);
             }
 
-            const fileToSend = chatPhotoFile;
+            const photoToSend = chatPhotoFile;
+            const videoToSend = chatVideoFile;
             input.value = '';
             clearChatPhoto();
 
@@ -1371,14 +1964,18 @@
             formData.append('latitude', currentLat);
             formData.append('longitude', currentLng);
             formData.append('citizen_phone', userEmail);
+            formData.append('session_id', indexChatSessionId);
 
             if (forceRegister) {
                 formData.append('confirm_register', 'true');
                 formData.append('action', 'register');
             }
 
-            if (fileToSend) {
-                formData.append('photo', fileToSend);
+            if (photoToSend) {
+                formData.append('photo', photoToSend);
+            }
+            if (videoToSend) {
+                formData.append('video', videoToSend);
             }
 
             try {
@@ -1422,16 +2019,20 @@
             const row = document.createElement('div');
             row.className = 'msg-row user';
 
-            let imgTag = '';
+            let mediaTag = '';
             if (file) {
                 const url = URL.createObjectURL(file);
-                imgTag = `<img src="${url}" class="bubble-image" alt="evidence">`;
+                if (file.type && file.type.startsWith('video/')) {
+                    mediaTag = `<video src="${url}" controls class="bubble-image" style="max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 6px; display: block;"></video>`;
+                } else {
+                    mediaTag = `<img src="${url}" class="bubble-image" alt="evidence">`;
+                }
             }
 
             row.innerHTML = `
                 <div class="bubble user">
                     ${text ? `<div>${text}</div>` : ''}
-                    ${imgTag}
+                    ${mediaTag}
                     <div class="bubble-time">${time}</div>
                 </div>
             `;
@@ -1552,15 +2153,26 @@
         function onFormPhotoSelected(e) {
             const file = e.target.files[0];
             if (file) {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert("⚠️ फाईलचा आकार १०MB पेक्षा जास्त आहे. कृपया लहान फाईल निवडा.");
+                    e.target.value = '';
+                    return;
+                }
                 formPhotoFile = file;
-                const r = new FileReader();
-                r.onload = (ev) => {
-                    const img = document.getElementById('formPreviewImg');
-                    img.src = ev.target.result;
-                    img.style.display = 'block';
-                    document.getElementById('formUploadNotice').innerText = `✓ फोटो निवडला: ${file.name}`;
-                };
-                r.readAsDataURL(file);
+                const isVideo = file.type && file.type.startsWith('video/');
+                const img = document.getElementById('formPreviewImg');
+                if (isVideo) {
+                    img.style.display = 'none';
+                    document.getElementById('formUploadNotice').innerText = `✓ 📹 व्हिडिओ निवडला: ${file.name} (${(file.size / (1024*1024)).toFixed(1)} MB)`;
+                } else {
+                    const r = new FileReader();
+                    r.onload = (ev) => {
+                        img.src = ev.target.result;
+                        img.style.display = 'block';
+                        document.getElementById('formUploadNotice').innerText = `✓ 📷 फोटो निवडला: ${file.name}`;
+                    };
+                    r.readAsDataURL(file);
+                }
             }
         }
 
@@ -1570,7 +2182,7 @@
             const btn = document.getElementById('btnFormSubmit');
 
             if (!desc && !formPhotoFile) {
-                alert("कृपया तक्रारीचे वर्णन लिहा किंवा फोटो निवडा.");
+                alert("कृपया तक्रारीचे वर्णन लिहा किंवा फोटो/व्हिडिओ निवडा.");
                 return;
             }
 
@@ -1583,7 +2195,13 @@
             fd.append('longitude', currentLng);
             fd.append('citizen_phone', userEmail);
             if (prio) fd.append('priority', prio);
-            if (formPhotoFile) fd.append('photo', formPhotoFile);
+            if (formPhotoFile) {
+                if (formPhotoFile.type && formPhotoFile.type.startsWith('video/')) {
+                    fd.append('video', formPhotoFile);
+                } else {
+                    fd.append('photo', formPhotoFile);
+                }
+            }
 
             try {
                 const res = await fetch('/api/v1/complaints/register', { method: 'POST', body: fd });
@@ -1597,7 +2215,7 @@
                     document.getElementById('formDesc').value = '';
                     formPhotoFile = null;
                     document.getElementById('formPreviewImg').style.display = 'none';
-                    document.getElementById('formUploadNotice').innerText = "📷 फोटो निवडण्यासाठी येथे टॅप करा";
+                    document.getElementById('formUploadNotice').innerText = "📷 / 📹 फोटो किंवा व्हिडिओ निवडण्यासाठी येथे टॅप करा (कमाल १० MB)";
                     
                     // Switch to complaints tab and view it
                     document.getElementById('trackInput').value = data.ticket_id;

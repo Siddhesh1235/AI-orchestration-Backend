@@ -134,6 +134,20 @@ DEPARTMENT_MAPPINGS: Dict[str, Dict[str, Any]] = {
         "sla_hours": 24
     },
 
+    # Health & Public Sanitation
+    "health_sanitation": {
+        "department_code": "HEALTH_SWM",
+        "department_name": "Health & Sanitation",
+        "department_name_mr": "आरोग्य व स्वच्छता विभाग",
+        "sla_hours": 24
+    },
+    "sanitation": {
+        "department_code": "HEALTH_SWM",
+        "department_name": "Health & Sanitation",
+        "department_name_mr": "आरोग्य व स्वच्छता विभाग",
+        "sla_hours": 24
+    },
+
     # Default
     "other": {
         "department_code": "GENERAL_ADMIN",
@@ -143,10 +157,29 @@ DEPARTMENT_MAPPINGS: Dict[str, Dict[str, Any]] = {
     }
 }
 
+try:
+    from app.config.category_registry import normalize_category_key, get_category_info
+except ImportError:
+    normalize_category_key = None
+    get_category_info = None
+
 
 def get_department_routing(category: str) -> Dict[str, Any]:
     """
     Returns department routing info for the given civic category.
     """
     cat_key = (category or "").lower().strip()
-    return DEPARTMENT_MAPPINGS.get(cat_key, DEPARTMENT_MAPPINGS["other"])
+    if cat_key in DEPARTMENT_MAPPINGS:
+        return DEPARTMENT_MAPPINGS[cat_key]
+    if normalize_category_key and get_category_info:
+        norm = normalize_category_key(cat_key)
+        info = get_category_info(norm)
+        if info and "department_code" in info:
+            return {
+                "department_code": info.get("department_code", "GENERAL_ADMIN"),
+                "department_name": info.get("department_name", "General Administration"),
+                "department_name_mr": info.get("department_name_mr", "सामान्य प्रशासन विभाग"),
+                "sla_hours": info.get("sla_hours", 48)
+            }
+    return DEPARTMENT_MAPPINGS.get("other")
+

@@ -23,22 +23,27 @@ except ImportError:
     CV_AVAILABLE = False
 
 from app.config.settings import settings
+try:
+    from app.config.category_registry import CATEGORIES as REGISTRY_CATEGORIES, normalize_category_key
+    TARGET_CLASSES = list(REGISTRY_CATEGORIES)
+except ImportError:
+    normalize_category_key = None
+    TARGET_CLASSES = [
+        "drainage",
+        "garbage",
+        "pipeline_water_leakage",
+        "pothole",
+        "traffic_jams",
+        "streetlight",
+        "trees",
+        "noise_pollution",
+        "encroachment",
+        "electricity",
+        "unauthorized_banner_flex",
+        "health_sanitation"
+    ]
 
 logger = logging.getLogger("pcms.image_agent")
-
-TARGET_CLASSES = [
-    "drainage",
-    "garbage",
-    "pipeline_water_leakage",
-    "pothole",
-    "traffic_jams",
-    "streetlight",
-    "trees",
-    "noise_pollution",
-    "encroachment",
-    "electricity",
-    "unauthorized_banner_flex"
-]
 
 
 # Exact mapping for custom fine-tuned YOLO11 model (12 Classes)
@@ -48,7 +53,7 @@ CUSTOM_12_CLASSES_MAPPING = {
     "electricity": "electricity",
     "encroachment": "encroachment",
     "garbage": "garbage",
-    "health_sanitation": "garbage",
+    "health_sanitation": "health_sanitation",
     "noise_pollution": "noise_pollution",
     "pipelinedefects": "pipeline_water_leakage",
     "pipeline_defects": "pipeline_water_leakage",

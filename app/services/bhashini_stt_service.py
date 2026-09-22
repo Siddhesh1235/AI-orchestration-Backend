@@ -88,6 +88,51 @@ def convert_audio_to_wav_16k_mono(audio_bytes: bytes, input_format: str = "ogg")
                     pass
 
 
+def extract_audio_from_video_file(video_path: str) -> Optional[bytes]:
+    """
+    Extracts audio stream from a video file (.mp4, .webm, .3gp, .mov)
+    and converts it to 16kHz mono WAV bytes strictly formatted for Bhashini ASR.
+    Returns None if the video has no audio stream or extraction fails.
+    """
+    if not video_path or not os.path.exists(video_path):
+        return None
+
+    ffmpeg_exe = get_ffmpeg_executable()
+    if not ffmpeg_exe:
+        logger.warning("[VideoAudioExtractor] FFmpeg not found; skipping audio extraction.")
+        return None
+
+    out_wav = video_path + ".extracted.wav"
+    try:
+        cmd = [
+            ffmpeg_exe, "-y",
+            "-i", video_path,
+            "-vn",
+            "-acodec", "pcm_s16le",
+            "-ac", "1",
+            "-ar", "16000",
+            out_wav
+        ]
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if res.returncode == 0 and os.path.exists(out_wav) and os.path.getsize(out_wav) > 100:
+            with open(out_wav, "rb") as f:
+                extracted_bytes = f.read()
+            logger.info(f"[VideoAudioExtractor] Successfully extracted {len(extracted_bytes)} bytes 16kHz WAV from video.")
+            return extracted_bytes
+        else:
+            logger.info(f"[VideoAudioExtractor] Video has no extractable audio stream or silent track.")
+            return None
+    except Exception as e:
+        logger.warning(f"[VideoAudioExtractor] Could not extract audio from video: {e}")
+        return None
+    finally:
+        if os.path.exists(out_wav):
+            try:
+                os.unlink(out_wav)
+            except Exception:
+                pass
+
+
 def normalize_language_code(language: str) -> str:
     """Normalizes language code to standard 'mr', 'hi', or 'en'."""
     lang_clean = (language or "mr").strip().lower().split("-")[0].split("_")[0]
