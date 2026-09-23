@@ -125,6 +125,105 @@ PCMC_KNOWLEDGE_BASE = {
             "👉 *If the garbage vehicle hasn't arrived or waste is piling up, please let me know to notify the Ward Sanitary Inspector immediately!*"
         )
     },
+    "sarathi_vs_wardmitra": {
+        "patterns": [
+            r"difference\s+between.*(?:sarathi|सारथी).*wardmitra",
+            r"difference\s+between.*wardmitra.*(?:sarathi|सारथी)",
+            r"(?:सारथी|sarathi).*?(?:कॉल\s*सेंटर|call\s*center)?.*?(?:फरक|तुलना|difference|vs|बनाम|अंतर).*?(?:वॉर्डमित्र|wardmitra)",
+            r"(?:वॉर्डमित्र|wardmitra).*?(?:फरक|तुलना|difference|vs|बनाम|अंतर).*?(?:सारथी|sarathi)",
+            r"(?:सारथी|sarathi).*?(?:वॉर्डमित्र|wardmitra).*?(?:फरक|तुलना|difference|vs|बनाम|अंतर)",
+            r"(?:सारथी|sarathi).*?(?:कॉल\s*सेंटर|call\s*center)?.*?(?:वॉर्डमित्र|wardmitra).*?(?:फरक|तुलना|difference|vs|बनाम|अंतर)",
+            r"सारथी\s*(?:आणि|व)\s*वॉर्डमित्र\s*(?:मधील|त)?\s*(?:फरक|तुलना)",
+            r"सारथी\s*(?:आणि|व)\s*वॉर्ड\s*मित्र\s*(?:मधील|त)?\s*(?:फरक|तुलना)",
+            r"sarathi\s*(?:aur|tatha|va)\s*wardmitra\s*(?:me|mein)?\s*(?:antar|difference)",
+            r"\bsarathi\s+vs\s+wardmitra\b",
+            r"\bwardmitra\s+vs\s+sarathi\b",
+            r"सारथी\s+vs\s+वॉर्डमित्र",
+            r"वॉर्डमित्र\s+vs\s+सारथी"
+        ],
+        "mr": (
+            "⚖️ **सारथी कॉल सेंटर विरुद्ध वॉर्डमित्र AI (तुलना व फरक):**\n\n"
+            "१️⃣ **सारथी कॉल सेंटर (Helpline: `020-67333333`):**\n"
+            "   • **प्रकार:** पारंपारिक मानवी (Human Agent) कॉल सेंटर सेवा.\n"
+            "   • **वेळ:** सकाळी ८:०० ते रात्री १०:०० वाजेपर्यंत मर्यादित.\n"
+            "   • **मर्यादा:** केवळ फोनवर बोलून समस्या सांगावी लागते. कॉलवर थेट घटनास्थळाचा फोटो, व्हिडिओ किंवा अचूक GPS लोकेशन पाठवता येत नाही.\n\n"
+            "२️⃣ **वॉर्डमित्र AI (WardMitra AI - Digital Assistant):**\n"
+            "   • **प्रकार:** २४x७ अविरत कार्यरत असलेला आधुनिक प्रभाग-स्तरीय डिजिटल सहाय्यक.\n"
+            "   • **वेळ:** २४ तास, आठवड्याचे सातही दिवस (24x7) उपलब्ध.\n"
+            "   • **प्रमुख वैशिष्ट्ये:**\n"
+            "     - 📸 **स्मार्ट फोटो व व्हिडिओ तपासणी:** AI द्वारे खड्डे, बंद पथदिवे किंवा कचरा काही सेकंदांत अचूक ओळखला जातो.\n"
+            "     - 📍 **थेट GPS व प्रभाग मॅपिंग:** तक्रार थेट त्या प्रभागाच्या संबंधित क्षेत्रीय अभियंत्याकडे वर्ग होते.\n"
+            "     - ⏱️ **त्वरित तिकीट (WM-...) व लाइव्ह ट्रॅकिंग:** काम कोणत्या टप्प्यावर आहे हे थेट मोबाईलवर पाहता येते.\n"
+            "     - 🗣️ **व्हॉईस व बहुभाषिक संवाद:** मराठी, हिंदी व इंग्रजीत बोलून किंवा टाईप करून सहज वापर करता येतो."
+        ),
+        "hi": (
+            "⚖️ **सारथी कॉल सेंटर बनाम वॉर्डमित्र AI (तुलना और अंतर):**\n\n"
+            "१️⃣ **सारथी कॉल सेंटर (हेल्पलाइन: `020-67333333`):**\n"
+            "   • **प्रकार:** पारंपरिक मानवीय (Human Agent) कॉल सेंटर सेवा।\n"
+            "   • **समय:** सुबह ८:०० से रात १०:०० बजे तक।\n"
+            "   • **सीमा:** केवल फोन पर बोलकर शिकायत दर्ज होती है; फोटो, वीडियो या लाइव GPS लोकेशन नहीं भेजी जा सकती।\n\n"
+            "२️⃣ **वॉर्डमित्र AI (WardMitra AI):**\n"
+            "   • **प्रकार:** २४x७ सक्रिय आधुनिक वार्ड-स्तरीय डिजिटल सहायक।\n"
+            "   • **समय:** २४ घंटे, सातों दिन (24x7) उपलब्ध।\n"
+            "   • **विशेषताएं:**\n"
+            "     - 📸 **स्मार्ट फोटो/वीडियो पहचान:** AI द्वारा समस्या की तुरंत पहचान।\n"
+            "     - 📍 **लाइव GPS वार्ड मैपिंग:** शिकायत सीधे वार्ड इंजीनियर को आवंटित।\n"
+            "     - ⏱️ **तुरंत टिकट (WM-...) और लाइव ट्रैकिंग:** घर बैठे मोबाइल पर स्टेटस।\n"
+            "     - 🗣️ **वॉइस और बहुभाषी सपोर्ट:** मराठी, हिंदी और अंग्रेजी में वॉइस या टेक्स्ट से उपयोग।"
+        ),
+        "en": (
+            "⚖️ **PCMC Sarathi Call Center vs WardMitra AI (Comparison & Differences):**\n\n"
+            "1️⃣ **Sarathi Call Center (Helpline: `020-67333333`):**\n"
+            "   • **Nature:** Traditional human-operated telephone helpline.\n"
+            "   • **Hours:** 8:00 AM to 10:00 PM.\n"
+            "   • **Limitations:** Voice call only; citizens cannot attach live site photos, video footage, or exact GPS pins over phone calls.\n\n"
+            "2️⃣ **WardMitra AI (Hyper-Local Multimodal Assistant):**\n"
+            "   • **Nature:** 24x7 intelligent digital ward assistant.\n"
+            "   • **Hours:** 24 hours, 7 days a week (24x7 continuous).\n"
+            "   • **Key Capabilities:**\n"
+            "     - 📸 **AI Multimodal Vision:** Instantly inspects and classifies potholes, dark streetlights, and garbage dumps.\n"
+            "     - 📍 **GPS Geo-Fencing:** Automatically maps grievances to ward-level field engineers.\n"
+            "     - ⏱️ **Instant Ticket (WM-...) & Live SLA Tracking:** Track progress from dispatch to citizen sign-off.\n"
+            "     - 🗣️ **Voice & Multilingual:** Natural text and voice interaction in Marathi, Hindi, and English."
+        )
+    },
+    "citizen_privacy_protection": {
+        "patterns": [
+            r"मोबाईल\s*नंबर.*(?:दिसेल|सार्वजनिक|गोपनीय|सुरक्षित|दिसणार)",
+            r"नंबर.*इतरांना\s*दिसेल",
+            r"माझी\s*तक्रार.*इतरांना\s*दिसेल",
+            r"मोबाईल\s*नंबर.*इतरांना",
+            r"माझा\s*(?:मोबाईल\s*)?नंबर.*(?:इतरांना|दिसणार|दिसेल|सार्वजनिक)",
+            r"इतरांना\s*(?:माहिती|नंबर|तक्रार)\s*दिसेल",
+            r"(?:दूसरों|इतरांना).*?(?:दिखेगा|दिसेल)",
+            r"(?:मोबाइल|मोबाईल)\s*(?:नंबर|नं).*?(?:दूसरों|दिखेगा|सार्वजनिक|गोपनीय)",
+            r"(?:मेरा|माझा).*?(?:मोबाइल|मोबाईल)\s*नंबर",
+            r"क्या.*?(?:मोबाइल|मोबाईल)\s*नंबर",
+            r"mobile\s*(?:number|no).*visible.*others",
+            r"privacy|गोपनीयता|वैयक्तिक\s*माहिती|number\s*leak"
+        ],
+        "mr": (
+            "🛡️ **नागरिकांची गोपनीयता व डेटा सुरक्षितता:**\n\n"
+            "**नाही, मुळीच नाही!** आपला मोबाईल नंबर आणि तक्रारीचा वैयक्तिक तपशील इतर कोणालाही दिसत नाही.\n\n"
+            "• **१००% गोपनीयता:** वॉर्डमित्र AI आणि PCMC सिस्टीममध्ये नागरिकांचा डेटा अत्यंत सुरक्षित व गोपनीय ठेवला जातो.\n"
+            "• **केवळ अधिकृत वापर:** आपला फोन नंबर केवळ तक्रार सोडवणाऱ्या प्रत्यक्ष क्षेत्रीय अभियंत्याला (Field Engineer) कामाच्या आवश्यक संपर्कासाठी दिसतो.\n"
+            "• **सार्वजनिक नाही:** आपला नंबर कधीही सार्वजनिक केला जात नाही किंवा कोणत्याही तृतीय पक्षाला दिला जात नाही."
+        ),
+        "hi": (
+            "🛡️ **नागरिक गोपनीयता और डेटा सुरक्षा:**\n\n"
+            "**नहीं, बिल्कुल नहीं!** आपका मोबाइल नंबर और शिकायत विवरण किसी अन्य व्यक्ति या जनता को नहीं दिखाई देगा।\n\n"
+            "• **१००% गोपनीयता:** वॉर्डमित्र AI में नागरिकों की व्यक्तिगत जानकारी पूरी तरह सुरक्षित रखी जाती है।\n"
+            "• **केवल अधिकृत उपयोग:** आपका संपर्क केवल समस्या का समाधान करने वाले संबंधित वार्ड इंजीनियर को आवश्यक समन्वय हेतु दिखता है।\n"
+            "• **सार्वजनिक नहीं:** यह विवरण कभी भी सार्वजनिक नहीं किया जाता।"
+        ),
+        "en": (
+            "🛡️ **Citizen Privacy & Data Protection:**\n\n"
+            "**No, absolutely not!** Your mobile number and personal grievance details are NEVER visible to other citizens or the general public.\n\n"
+            "• **Strict Confidentiality:** PCMC WardMitra enforces strict enterprise-grade privacy protection.\n"
+            "• **Authorized Access Only:** Your contact details are visible exclusively to the assigned field engineer for on-site resolution coordination.\n"
+            "• **Never Publicized:** Your identity is never shared or made public."
+        )
+    },
     "helpline_numbers": {
         "patterns": [
             r"हेल्पलाईन|फोन\s*नंबर|कंट्रोल\s*रूम|कॉल\s*सेंटर|संपर्क",
@@ -243,13 +342,20 @@ class HumanPersonaService:
     def find_knowledge_answer(self, text: str, lang: str = "mr") -> Optional[str]:
         """Scans query for municipal service questions and returns human-crafted answer."""
         t_clean = text.lower().strip()
+
+        # 1. Check PCMC Central Knowledge Base (certificates, tax, garbage schedule, water timings, helplines)
         for key, entry in PCMC_KNOWLEDGE_BASE.items():
             for pat in entry["patterns"]:
                 if re.search(pat, t_clean):
                     logger.info(f"[HumanPersona] Matched PCMC Knowledge Base: {key} (lang={lang})")
-                    return entry.get(lang, entry["en"])
+                    ans = entry.get(lang, entry["en"])
+                    if lang in ["mr", "hi"] and not ans.startswith("नमस्कार") and not ans.startswith("नमस्ते"):
+                        return f"नमस्कार! 🙏\n\n{ans}"
+                    elif lang == "en" and not ans.startswith("Hello") and not ans.startswith("Greetings"):
+                        return f"Hello! 🙏\n\n{ans}"
+                    return ans
 
-        # Check Ward RAG Service for hyper-local ward knowledge (Ward Handbook)
+        # 2. Check Ward RAG Service for hyper-local ward knowledge & FAQs (Ward Handbooks)
         try:
             from app.services.rag_service import rag_service, is_knowledge_inquiry
             if is_knowledge_inquiry(t_clean):

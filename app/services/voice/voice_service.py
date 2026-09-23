@@ -84,7 +84,9 @@ class VoiceService:
         )
 
         chat_result["transcript"] = transcript
+        chat_result["transcribed_text"] = transcript
         chat_result["stt_info"] = stt_info
+        chat_result["success"] = True
 
         # 3. Text-to-Speech Synthesis for Bot Reply
         if voice_reply and chat_result.get("reply"):

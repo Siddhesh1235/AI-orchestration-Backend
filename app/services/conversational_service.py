@@ -34,7 +34,8 @@ from app.agents.nlp_agent import (
     INTENT_FEEDBACK,
     INTENT_ABUSIVE_MESSAGE,
     INTENT_GREETING,
-    INTENT_UNRELATED
+    INTENT_UNRELATED,
+    INTENT_START_NEW_COMPLAINT
 )
 from app.agents.image_agent import image_agent
 from app.agents.routing_agent import routing_agent
@@ -80,12 +81,16 @@ CATEGORY_DISPLAY_NAMES["illegal_debris_dumping"] = {"en": "Illegal Debris Dumpin
 CATEGORY_DISPLAY_NAMES["drainage_failures"] = {"en": "Drainage & Sewerage", "mr": "ड्रेनेज व सांडपाणी", "hi": "ड्रेनेज और सीवर"}
 CATEGORY_DISPLAY_NAMES["water_pipeline_leakages"] = {"en": "Water Pipeline Leakage", "mr": "पाणी गळती व पुरवठा", "hi": "पानी पाइपलाइन लीकेज"}
 CATEGORY_DISPLAY_NAMES["pipelinedefects"] = {"en": "Water Pipeline Leakage", "mr": "पाणी गळती व पुरवठा", "hi": "पानी पाइपलाइन लीकेज"}
+CATEGORY_DISPLAY_NAMES["water_supply"] = {"en": "Water Supply", "mr": "पाणीपुरवठा", "hi": "जलापूर्ति"}
+CATEGORY_DISPLAY_NAMES["irregular_water_supply"] = {"en": "Irregular Water Supply", "mr": "अनियमित पाणीपुरवठा", "hi": "अनियमित जलापूर्ति"}
 CATEGORY_DISPLAY_NAMES["road_incidents_traffic"] = {"en": "Traffic & Road Incidents", "mr": "वाहतूक कोंडी व रस्ता समस्या", "hi": "ट्रैफिक और सड़क घटनाएं"}
 CATEGORY_DISPLAY_NAMES["banners_flex"] = {"en": "Illegal Banners & Flex", "mr": "अनधिकृत फ्लेक्स व बॅनर", "hi": "अवैध बैनर और फ्लेक्स"}
 
 
 
 class ConversationalService:
+    state_manager = conversation_state_manager
+
     def detect_language(self, text: str) -> str:
         """Delegates language detection to nlp_agent."""
         return nlp_agent.detect_language(text)
@@ -499,11 +504,28 @@ class ConversationalService:
             lang = video_result.detected_language
             state.language = lang
         elif text:
-            lang = self.detect_language(text)
-            if lang and lang != "unclear":
-                state.language = lang
+            detected_lang = self.detect_language(text)
+            if detected_lang == "unclear":
+                lang = "unclear"
+            elif detected_lang:
+                # Session Language Locking: If session has an established Indian language (mr or hi),
+                # do not let a Latin-character address, proper noun, button text, or short answer switch language to "en"
+                # unless user uses explicit English conversational question words / inquiry sentences
+                if getattr(state, "language", None) in ["mr", "hi"] and detected_lang == "en":
+                    english_sentence_markers = {
+                        "what", "where", "how", "why", "who", "when", "tell", "explain",
+                        "can you", "could you", "in english", "english please", "speak english"
+                    }
+                    t_lower = text.lower()
+                    has_explicit_en_query = any(m in t_lower for m in english_sentence_markers)
+                    if not has_explicit_en_query:
+                        detected_lang = state.language
+                state.language = detected_lang
+                lang = detected_lang
+            else:
+                lang = state.language or "mr"
         else:
-            lang = state.language or "en"
+            lang = state.language or "mr"
 
         # If user asks how to register / procedure / step-by-step guidance, clear any category override
         if text and self.is_complaint_process_inquiry(text):
@@ -637,6 +659,179 @@ class ConversationalService:
             f"confirmed={state.category_confirmed}, pending_field='{state.pending_field}'"
         )
 
+        # Step 2.5: Tracking Requests (via Button Action, Ticket ID, or Status Query)
+        target_track_tid = None
+        is_track_requested = False
+
+        if action and action.startswith("track_"):
+            target_track_tid = action.replace("track_", "").strip()
+            is_track_requested = True
+        elif action == "track":
+            is_track_requested = True
+        elif text:
+            tid_match = self.is_tracking_intent(text)
+            if tid_match:
+                is_track_requested = True
+                if tid_match != "UNKNOWN":
+                    target_track_tid = tid_match
+            elif detected_intent == INTENT_STATUS_QUERY:
+                is_track_requested = True
+        elif detected_intent == INTENT_STATUS_QUERY:
+            is_track_requested = True
+
+        if is_track_requested:
+            # Fallback 1: check target_track_tid from state if unknown
+            if not target_track_tid or target_track_tid == "UNKNOWN":
+                target_track_tid = getattr(state, "last_duplicate_ticket", None) or getattr(state, "active_ticket_id", None)
+            
+            # Fallback 2: check state history for recently mentioned ticket ID
+            if not target_track_tid and getattr(state, "history", None):
+                for turn in reversed(state.history):
+                    m_hist = re.search(r'\bWM-\d{8}-\d{4}\b', str(turn.get("reply", "")) + " " + str(turn.get("message", "")))
+                    if m_hist:
+                        target_track_tid = m_hist.group(0)
+                        break
+
+            # Fallback 3: check DB for latest active complaint of citizen_phone
+            if not target_track_tid and citizen_phone and citizen_phone != "Anonymous":
+                latest_c = (
+                    db.query(Complaint)
+                    .filter(Complaint.citizen_phone == citizen_phone)
+                    .order_by(Complaint.created_at.desc())
+                    .first()
+                )
+                if latest_c:
+                    target_track_tid = latest_c.ticket_id
+
+            if target_track_tid and target_track_tid != "UNKNOWN":
+                complaint = db.query(Complaint).filter(Complaint.ticket_id == target_track_tid).first()
+                if complaint:
+                    state.active_ticket_id = complaint.ticket_id
+                    worker_str = complaint.assigned_worker_name or ("Er. संदीप माने" if lang == "mr" else "Er. Sandeep Mane")
+                    worker_contact = f" ({complaint.assigned_worker_contact})" if complaint.assigned_worker_contact else ""
+                    ward_display = f"प्रभाग {complaint.ward_number}" if complaint.ward_number else "निश्चित केले नाही"
+                    ward_info = geo_agent.get_ward_by_number(complaint.ward_number) if complaint.ward_number else None
+                    if ward_info:
+                        ward_display = f"प्रभाग {ward_info['ward_number']}: {ward_info['ward_name']} ({ward_info['zone']})"
+
+                    cat_disp = CATEGORY_DISPLAY_NAMES.get(complaint.detected_category, {}).get(lang, complaint.detected_category)
+                    if lang == "mr":
+                        reply = (
+                            f"🔍 **तक्रार स्थिती: {complaint.ticket_id}**\n\n"
+                            f"• **स्थिती:** {complaint.status.value}\n"
+                            f"• **वर्ग / श्रेणी:** {cat_disp}\n"
+                            f"• **प्रभाग:** {ward_display}\n"
+                            f"• **नियुक्त क्षेत्रीय अभियंता:** {worker_str}{worker_contact}\n"
+                            f"• **निकालाची मुदत (SLA):** {complaint.sla_hours} तास"
+                        )
+                    elif lang == "hi":
+                        reply = (
+                            f"🔍 **शिकायत स्थिति: {complaint.ticket_id}**\n\n"
+                            f"• **स्थिति:** {complaint.status.value}\n"
+                            f"• **श्रेणी:** {cat_disp}\n"
+                            f"• **प्रभाग:** {ward_display}\n"
+                            f"• **नियुक्त क्षेत्रीय इंजीनियर:** {worker_str}{worker_contact}\n"
+                            f"• **निवारण समयसीमा (SLA):** {complaint.sla_hours} घंटे"
+                        )
+                    else:
+                        reply = (
+                            f"🔍 **Complaint Status: {complaint.ticket_id}**\n\n"
+                            f"• **Status:** {complaint.status.value}\n"
+                            f"• **Category:** {cat_disp}\n"
+                            f"• **Ward:** {ward_display}\n"
+                            f"• **Assigned Field Engineer:** {worker_str}{worker_contact}\n"
+                            f"• **SLA Target:** {complaint.sla_hours} Hours"
+                        )
+
+                    buttons = None
+                    action_prompt = None
+                    intent = "TRACK_COMPLAINT"
+                    if complaint.status.value in ["RESOLVED", "CITIZEN_CONFIRMATION"]:
+                        intent = "CONFIRM_RESOLUTION_REQUIRED"
+                        action_prompt = "confirm_resolution"
+                        if lang == "mr":
+                            reply += (
+                                "\n\n✅ **क्षेत्रीय अधिकाऱ्यांकडून ही समस्या सोडवण्यात आल्याचे नोंदवले आहे.**\n"
+                                "कृपया कामाची प्रत्यक्ष खात्री करा: समस्या खरोखर सुटली आहे का?"
+                            )
+                            buttons = [
+                                {"text": "✅ होय, समस्या सुटली आहे (Yes, Resolved)", "action": f"confirm_resolution_yes_{complaint.ticket_id}"},
+                                {"text": "❌ नाही, समस्या अद्याप आहे (No, Still Exists)", "action": f"confirm_resolution_no_{complaint.ticket_id}"}
+                            ]
+                        elif lang == "hi":
+                            reply += (
+                                "\n\n✅ **क्षेत्रीय अधिकारी द्वारा यह समस्या हल कर दी गई है।**\n"
+                                "कृपया पुष्टि करें: क्या समस्या हल हो चुकी है?"
+                            )
+                            buttons = [
+                                {"text": "✅ हाँ, समस्या हल हो गई है", "action": f"confirm_resolution_yes_{complaint.ticket_id}"},
+                                {"text": "❌ नहीं, समस्या अभी भी है", "action": f"confirm_resolution_no_{complaint.ticket_id}"}
+                            ]
+                        else:
+                            reply += (
+                                "\n\n✅ **Field staff have marked this grievance as RESOLVED.**\n"
+                                "Please verify and confirm: Has the problem been resolved?"
+                            )
+                            buttons = [
+                                {"text": "✅ Yes, Problem Resolved", "action": f"confirm_resolution_yes_{complaint.ticket_id}"},
+                                {"text": "❌ No, Problem Still Exists", "action": f"confirm_resolution_no_{complaint.ticket_id}"}
+                            ]
+
+                    result_dict = {
+                        "reply": reply,
+                        "intent": intent,
+                        "language": lang,
+                        "category": complaint.detected_category,
+                        "category_name": cat_disp,
+                        "ticket_data": {
+                            "ticket_id": complaint.ticket_id,
+                            "status": complaint.status.value,
+                            "ward": complaint.ward_number,
+                            "assigned_worker_name": worker_str,
+                            "assigned_worker_contact": complaint.assigned_worker_contact or "020-67333333"
+                        },
+                        "action_prompt": action_prompt,
+                        "conversation_state": state.to_dict()
+                    }
+                    if buttons:
+                        result_dict["buttons"] = buttons
+                    return result_dict
+                else:
+                    if lang == "mr":
+                        msg = f"⚠️ तक्रार क्र. '{target_track_tid}' सिस्टीममध्ये सापडली नाही. कृपया योग्य तिकीट नंबर तपासा."
+                    elif lang == "hi":
+                        msg = f"⚠️ शिकायत क्र. '{target_track_tid}' सिस्टम में नहीं मिली। कृपया सही टिकट नंबर जांचें।"
+                    else:
+                        msg = f"⚠️ Ticket '{target_track_tid}' was not found. Please double-check your ticket number."
+                    return {
+                        "reply": msg,
+                        "intent": "TRACK_COMPLAINT",
+                        "language": lang,
+                        "category": None,
+                        "category_name": None,
+                        "ticket_data": None,
+                        "action_prompt": "specify_ticket_id",
+                        "conversation_state": state.to_dict()
+                    }
+            else:
+                # No ticket found to track - ask citizen politely for Ticket ID without starting intake
+                if lang == "mr":
+                    msg = "🔍 कृपया आपला तक्रार क्रमांक (उदा. **WM-20260922-0001**) सांगा, जेणेकरून मी लगेच प्रगती व स्थिती तपासेन."
+                elif lang == "hi":
+                    msg = "🔍 कृपया अपना शिकायत क्रमांक (उदा. **WM-20260922-0001**) बताएं, ताकि मैं तुरंत स्थिति की जांच कर सकूं।"
+                else:
+                    msg = "🔍 Please provide your Ticket ID (e.g. **WM-20260922-0001**) to check the latest resolution status."
+                return {
+                    "reply": msg,
+                    "intent": "TRACK_COMPLAINT",
+                    "language": lang,
+                    "category": None,
+                    "category_name": None,
+                    "ticket_data": None,
+                    "action_prompt": "specify_ticket_id",
+                    "conversation_state": state.to_dict()
+                }
+
         # Step 3 (BUG 6): Pre-Moderation & Casual Abuse Handling
         # Runs before complaint processing or continuing questions
         if detected_intent == INTENT_ABUSIVE_MESSAGE:
@@ -728,6 +923,71 @@ class ConversationalService:
                         "action_prompt": "describe_civic_issue",
                         "conversation_state": state.to_dict()
                     }
+
+        # Step 3.8: Explicit Start New Complaint Request (e.g. "नवीन तक्रार नोंदवा", "दुसरी तक्रार", "New Complaint")
+        if detected_intent == INTENT_START_NEW_COMPLAINT or action in ["start_new_complaint", "new_complaint"]:
+            state.reset_after_registration()
+            if lang == "mr":
+                reply = (
+                    "होय नक्कीच! आपली नवीन समस्या कोणती आहे?\n\n"
+                    "उदा. 💡 पथदिवा, 🕳️ खड्डा, 🗑️ कचरा, 🚰 पाणी गळती किंवा 🌊 ड्रेनेज.\n"
+                    "कृपया समस्येचे वर्णन सांगा किंवा खालीलपैकी एक बटण निवडा:"
+                )
+            elif lang == "hi":
+                reply = (
+                    "जी बिल्कुल! आपकी नई समस्या क्या है?\n\n"
+                    "उदा. 💡 स्ट्रीट लाइट, 🕳️ गड्ढा, 🗑️ कचरा, 🚰 पानी लीकेज या 🌊 ड्रेनेज।\n"
+                    "कृपया समस्या का विवरण बताएं या नीचे दिए गए बटन को चुनें:"
+                )
+            else:
+                reply = (
+                    "Sure! What is your new civic issue?\n\n"
+                    "e.g. 💡 Streetlight, 🕳️ Pothole, 🗑️ Garbage, 🚰 Water Leakage, or 🌊 Drainage.\n"
+                    "Please describe your issue or select one of the buttons below:"
+                )
+            buttons = [
+                {"text": "💡 पथदिवा / Streetlight", "action": "select_category_streetlight"},
+                {"text": "🕳️ खड्डा / Pothole", "action": "select_category_pothole"},
+                {"text": "🗑️ कचरा / Garbage", "action": "select_category_garbage"},
+                {"text": "🚰 पाणीपुरवठा / Water", "action": "select_category_pipeline_water_leakage"},
+                {"text": "🌊 ड्रेनेज / Drainage", "action": "select_category_drainage"}
+            ]
+            return {
+                "reply": reply,
+                "intent": "START_NEW_COMPLAINT",
+                "language": lang,
+                "category": None,
+                "category_name": None,
+                "ticket_data": None,
+                "buttons": buttons,
+                "action_prompt": "choose_category_or_describe",
+                "conversation_state": state.to_dict()
+            }
+
+        # Step 3.9: Civic Knowledge Base & Informational Inquiry Priority
+        # If user asks an informational question/inquiry, provide guidance via Ward RAG / PCMC knowledge base first
+        from app.services.rag_service import is_knowledge_inquiry
+        if (
+            (detected_intent == "CIVIC_KNOWLEDGE_INQUIRY" or (text and is_knowledge_inquiry(text)))
+            and not photo_bytes
+            and not video_result
+            and not self.is_bot_inquiry_or_help(text)
+            and not self.is_complaint_process_inquiry(text)
+            and not self.is_greeting(text)
+            and not self.is_smalltalk_or_gratitude(text)
+        ):
+            kb_answer = human_persona_service.find_knowledge_answer(text, lang)
+            if kb_answer:
+                return {
+                    "reply": kb_answer,
+                    "intent": "CIVIC_KNOWLEDGE_INQUIRY",
+                    "language": lang,
+                    "category": None,
+                    "category_name": None,
+                    "ticket_data": None,
+                    "action_prompt": "ask_more_or_register",
+                    "conversation_state": state.to_dict()
+                }
 
         # Step 4 (BUG 5): Category Correction
         # If user explicitly corrects category (e.g. 'no, my complaint is about potholes')
@@ -1121,6 +1381,43 @@ class ConversationalService:
 
         if detected_intent == INTENT_REGISTRATION_CONFIRMATION or nlp_agent.is_affirmative_yes(text) or action in ["register", "register_new", "force_register"]:
             confirm_register = True
+        elif (
+            (state.pending_field == "registration_confirmation" or state.complaint_status == "ready_for_submission") and
+            (
+                detected_intent == INTENT_REGISTRATION_REJECTION or
+                action in ["cancel", "cancel_register", "confirm_register_no", "no"] or
+                (text and nlp_agent.is_negative_no(text))
+            )
+        ):
+            state.reset()
+            if lang == "mr":
+                reply = (
+                    "🛑 **तक्रार नोंदणी रद्द करण्यात आली आहे.**\n\n"
+                    "आपल्या संमतीशिवाय कोणतीही तक्रार नोंदवली जात नाही. "
+                    "आपल्याला भविष्यात कोणतीही नागरी समस्या असल्यास किंवा इतर मदत हवी असल्यास वॉर्डमित्र सदैव आपल्या सेवेत आहे! 🙏"
+                )
+            elif lang == "hi":
+                reply = (
+                    "🛑 **शिकायत दर्ज करना रद्द कर दिया गया है।**\n\n"
+                    "आपकी सहमति के बिना कोई शिकायत दर्ज नहीं की जाती। "
+                    "यदि आपको कोई अन्य समस्या हो या सहायता चाहिए, तो वार्डमित्र सदैव आपकी सेवा में है! 🙏"
+                )
+            else:
+                reply = (
+                    "🛑 **Complaint registration has been cancelled.**\n\n"
+                    "No complaint is submitted without your confirmation. "
+                    "If you need any other civic assistance in the future, WardMitra is always at your service! 🙏"
+                )
+            return {
+                "reply": reply,
+                "intent": "REGISTRATION_CANCELLED",
+                "language": lang,
+                "category": None,
+                "category_name": None,
+                "ticket_data": None,
+                "action_prompt": "describe_civic_issue",
+                "conversation_state": state.to_dict()
+            }
 
         # A. Video Ingestion Turn Handling
         if video_result:
@@ -1265,6 +1562,8 @@ class ConversationalService:
                 else:
                     if lang == "mr":
                         reply = f"कृपया {next_field} संदर्भातील माहिती द्या."
+                    elif lang == "hi":
+                        reply = f"कृपया {next_field} के बारे में जानकारी दें।"
                     else:
                         reply = f"Please provide details regarding {next_field}."
 
@@ -1282,9 +1581,9 @@ class ConversationalService:
             elif self.is_negative_confirmation(text, action):
                 state.on_video_confirmed_no()
                 if lang == "mr":
-                    reply = "ठीक आहे. कृपया आपण कोणती समस्या नोंदवू इच्छिता ते सांगा."
+                    reply = "ठीक आहे. कृपया आपण कोणती तक्रार नोंदवू इच्छिता ते सांगा."
                 elif lang == "hi":
-                    reply = "ठीक है। कृपया बताएं कि आप कौन सी समस्या दर्ज करना चाहते हैं।"
+                    reply = "ठीक है। कृपया बताएं कि आप कौन सी शिकायत दर्ज करना चाहते हैं।"
                 else:
                     reply = "Okay. Please tell me which issue you would like to report."
 
@@ -1306,13 +1605,19 @@ class ConversationalService:
         if text and intro_name:
             if lang == "mr":
                 reply = (
-                    f"नमस्कार {intro_name}! 👋 PCMC सारथी (वॉर्डमित्र) मध्ये आपले मनःपूर्वक स्वागत आहे.\n\n"
-                    "मी पिंपरी चिंचवड महानगरपालिकेचा अधिकृत नागरी सहाय्यक आहे. मी आज आपली काय मदत करू शकतो? "
-                    "आपण खड्डे, पथदिवे, कचरा, पाणीपुरवठा किंवा ड्रेनेज यांसारखी कोणतीही नागरी समस्या मला सांगू शकता किंवा प्रश्न विचारू शकता."
+                    f"नमस्कार {intro_name}! 🙏 PCMC सारथी (वॉर्डमित्र) मध्ये आपले सहर्ष स्वागत आहे.\n\n"
+                    "मी पिंपरी चिंचवड महानगरपालिकेचा अधिकृत नागरी साहाय्यक आहे. मी आज आपली कशी मदत करू शकतो? "
+                    "आपण खड्डे, पथदिवे, कचरा, पाणीपुरवठा किंवा ड्रेनेज यांसारख्या नागरी समस्यांची तक्रार नोंदवू शकता किंवा महापालिकेच्या सेवांबद्दल विचारू शकता."
+                )
+            elif lang == "hi":
+                reply = (
+                    f"नमस्ते {intro_name}! 🙏 PCMC सारथी (वॉर्डमित्र) में आपका स्वागत है।\n\n"
+                    "मैं पिंपरी चिंचवड नगर निगम का आधिकारिक नागरिक सहायक हूँ। मैं आज आपकी क्या सहायता कर सकता हूँ? "
+                    "आप गड्ढे, स्ट्रीट लाइट, कचरा, जलापूर्ति या जल निकासी जैसी नागरिक समस्याओं की रिपोर्ट कर सकते हैं।"
                 )
             else:
                 reply = (
-                    f"Hello {intro_name}! 👋 Welcome to PCMC Sarathi (WardMitra AI).\n\n"
+                    f"Hello {intro_name}! 🙏 Welcome to PCMC सारथी (WardMitra AI).\n\n"
                     "I am the official civic assistant for Pimpri Chinchwad Municipal Corporation. How can I assist you today? "
                     "You can report civic issues like potholes, streetlights, garbage, water supply, or drainage, or ask about municipal services."
                 )
@@ -1329,14 +1634,21 @@ class ConversationalService:
         if text and self.is_greeting(text):
             name_token = self.extract_greeting_name(text)
             if lang == "mr":
-                salutation = f"नमस्कार {name_token}! 👋" if name_token else "नमस्कार! 👋"
+                salutation = f"नमस्कार {name_token}! 🙏" if name_token else "नमस्कार! 🙏"
                 reply = (
-                    f"{salutation} मी PCMC सारथी / वॉर्डमित्र AI सहाय्यक आहे.\n\n"
-                    "मी पिंपरी चिंचवड मधील रस्ते, पथदिवे, कचरा, ड्रेनेज, पाणी पुरवठा अशा नागरी समस्या सोडवण्यात मदत करतो. "
+                    f"{salutation} मी PCMC सारथी / वॉर्डमित्र AI नागरी साहाय्यक आहे.\n\n"
+                    "मी आपल्या परिसरातील नागरी समस्या जसे खड्डे, पथदिवे, कचरा, ड्रेनेज, पाणी अशा समस्यांची नोंद घेणे व सोडवण्यात मदत करतो. "
                     "मी आज आपली काय मदत करू शकतो?"
                 )
+            elif lang == "hi":
+                salutation = f"नमस्ते {name_token}! 🙏" if name_token else "नमस्ते! 🙏"
+                reply = (
+                    f"{salutation} मैं PCMC सारथी / वॉर्डमित्र AI नागरिक सहायक हूँ।\n\n"
+                    "मैं आपके क्षेत्र में गड्ढे, स्ट्रीट लाइट, कचरा, ड्रेनेज, पानी जैसी नागरिक समस्याओं की रिपोर्टिंग और समाधान में मदद करता हूँ। "
+                    "मैं आज आपकी क्या सहायता कर सकता हूँ?"
+                )
             else:
-                salutation = f"Hello {name_token}! 👋" if name_token else "Hello! 👋"
+                salutation = f"Hello {name_token}! 🙏" if name_token else "Hello! 🙏"
                 reply = (
                     f"{salutation} Welcome to WardMitra AI (PCMC Sarathi).\n\n"
                     "I can help you report and track civic issues such as potholes, streetlights, garbage, drainage, or water supply in your area. "
@@ -1355,7 +1667,9 @@ class ConversationalService:
         # 1.1 Smalltalk / Gratitude
         if text and self.is_smalltalk_or_gratitude(text) and not confirm_register:
             if lang == "mr":
-                reply = "आपले स्वागत आहे! पिंपरी चिंचवड परिसरातील कोणत्याही नागरी समस्येसाठी कधीही संपर्क करा. मी सदैव सेवेत आहे."
+                reply = "आपले सहर्ष स्वागत आहे! भविष्यात कोणतीही नागरी समस्या असल्यास वॉर्डमित्र सदैव आपल्या सेवेत आहे. आपला दिवस आनंदात जावो."
+            elif lang == "hi":
+                reply = "आपका स्वागत है! भविष्य में किसी भी नागरिक समस्या के लिए वॉर्डमित्र सदैव आपकी सेवा में उपलब्ध है। आपका दिन शुभ हो!"
             else:
                 reply = "You're welcome! Feel free to reach out anytime if you face any civic issues like streetlights, potholes, garbage, or water leaks in PCMC. Have a great day!"
             return {
@@ -1758,8 +2072,20 @@ class ConversationalService:
                     "conversation_state": state.to_dict()
                 }
 
+        # Check if citizen is introducing a different civic category (prevent treating new complaint as location or description)
+        detected_category_hint = intent_info.get("category") if intent_info else None
+        if not detected_category_hint and text:
+            detected_category_hint = nlp_agent._keyword_match(t_clean)
+        
+        current_active_cat = state.confirmed_category or state.complaint_category
+        is_category_switch = bool(
+            detected_category_hint and
+            current_active_cat and
+            detected_category_hint != current_active_cat
+        ) or (detected_intent in [INTENT_NEW_COMPLAINT, INTENT_CATEGORY_SELECTION, INTENT_START_NEW_COMPLAINT] and bool(detected_category_hint and detected_category_hint != current_active_cat))
+
         # Description Capture
-        if (state.pending_field == "description" or state.current_question == "description" or detected_intent == INTENT_DESCRIPTION_PROVIDED) and not photo_bytes and text:
+        if not is_category_switch and (state.pending_field == "description" or state.current_question == "description" or detected_intent == INTENT_DESCRIPTION_PROVIDED) and not photo_bytes and text:
             state.description = text.strip()
             state.record_question_answered("description", text.strip())
             state.clear_pending_field()
@@ -1784,9 +2110,92 @@ class ConversationalService:
                 "conversation_state": state.to_dict()
             }
 
+        # Sub-category Handling & Protection (Garbage & Civic Subtypes)
+        WASTE_SUBCAT_MAP = {
+            "household waste": "household_waste",
+            "household": "household_waste",
+            "घरगुती कचरा": "household_waste",
+            "घरगुती": "household_waste",
+            "commercial waste": "commercial_waste",
+            "commercial": "commercial_waste",
+            "व्यावसायिक कचरा": "commercial_waste",
+            "व्यावसायिक": "commercial_waste",
+            "construction debris": "construction_debris",
+            "debris": "construction_debris",
+            "बांधकाम मलबा": "construction_debris",
+            "मलबा": "construction_debris",
+            "राडारोडा": "construction_debris",
+            "ओला कचरा": "wet_waste",
+            "सुका कचरा": "dry_waste",
+            "wet waste": "wet_waste",
+            "dry waste": "dry_waste"
+        }
+        matched_waste_subcat = None
+        if t_clean:
+            for w_key, w_val in WASTE_SUBCAT_MAP.items():
+                if w_key in t_clean:
+                    matched_waste_subcat = w_val
+                    break
+
+        if matched_waste_subcat and not photo_bytes and not video_result:
+            state.issue_type = matched_waste_subcat
+            state.sub_category = matched_waste_subcat
+            state.record_question_answered("issue_type", text)
+            state.record_question_answered("sub_category", text)
+            
+            cat_c = state.confirmed_category or state.complaint_category or "garbage"
+            cat_disp = CATEGORY_DISPLAY_NAMES.get(cat_c, {}).get(lang, cat_c.replace('_', ' ').title())
+
+            if state.location:
+                state.set_pending_field("registration_confirmation")
+                state.complaint_status = "ready_for_submission"
+                turn_seed = len(getattr(state, "history", [])) or getattr(state, "turn_count", 0)
+                reply = human_persona_service.generate_registration_confirmation_prompt(
+                    category_name=cat_disp,
+                    location=state.location,
+                    lang=lang,
+                    turn_seed=turn_seed
+                )
+                buttons = [
+                    {"text": "✅ Yes, Register / हो, नोंदवा", "action": "register"},
+                    {"text": "❌ No / नाही", "action": "cancel"}
+                ]
+                return {
+                    "reply": reply,
+                    "intent": "CONVERSATIONAL",
+                    "language": lang,
+                    "category": cat_c,
+                    "category_name": cat_disp,
+                    "ticket_data": None,
+                    "action_prompt": "confirm_register",
+                    "buttons": buttons,
+                    "conversation_state": state.to_dict()
+                }
+            else:
+                state.set_pending_field("location")
+                state.complaint_status = "collecting_information"
+                if lang == "mr":
+                    reply = f"समजले, कचऱ्याचा प्रकार **{matched_waste_subcat}** नोंदवला आहे. कृपया या कचऱ्याचे ठिकाण, रस्त्याचे नाव किंवा जवळची खूण सांगा."
+                elif lang == "hi":
+                    reply = f"समझ गया, कचरे का प्रकार **{matched_waste_subcat}** दर्ज कर लिया है। कृपया इसका स्थान या नजदीकी लैंडमार्क बताएं।"
+                else:
+                    reply = f"Recorded waste type as **{matched_waste_subcat}**. Please provide the location, street name, or nearest landmark."
+                return {
+                    "reply": reply,
+                    "intent": "INFORMATION_REQUIRED",
+                    "language": lang,
+                    "category": cat_c,
+                    "category_name": cat_disp,
+                    "ticket_data": None,
+                    "action_prompt": "provide_location",
+                    "conversation_state": state.to_dict()
+                }
+
         # Location Capture (BUG 1, BUG 3)
         # Check if the user is answering a location question or providing location while category is locked
         is_location_candidate = (
+            not is_category_switch and
+            not matched_waste_subcat and
             not nlp_agent.is_affirmative_yes(text) and
             not nlp_agent.is_negative_no(text) and
             (
@@ -1900,26 +2309,39 @@ class ConversationalService:
 
         # Detect Civic Category from NLP (user text) or fallback to session category (BUG 1, BUG 2, BUG 3)
         text_category = None
-        if state.category_confirmed and state.confirmed_category:
+        extracted_cat = None
+        if text and detected_intent not in [INTENT_LOCATION_PROVIDED, INTENT_REGISTRATION_CONFIRMATION, INTENT_REGISTRATION_REJECTION, INTENT_ABUSIVE_MESSAGE, INTENT_GREETING, INTENT_UNRELATED]:
+            # Check informal normalizer first (fast Gen-Z and multilingual detection)
+            informal_res = nlp_agent.extract_intent_and_category(text)
+            if informal_res.get("category"):
+                extracted_cat = informal_res["category"]
+                state.issue_type = informal_res.get("issue_type")
+            else:
+                extracted_cat = nlp_agent._keyword_match(t_clean)
+                if not extracted_cat:
+                    for cat_key in CATEGORY_DISPLAY_NAMES.keys():
+                        if cat_key in t_clean:
+                            extracted_cat = cat_key
+                            break
+
+        current_cat = state.confirmed_category or state.complaint_category
+        is_completed_or_idle = getattr(state, "complaint_status", "") in ["completed", "idle"]
+        has_new_different_category = bool(extracted_cat and current_cat and extracted_cat != current_cat)
+
+        if extracted_cat and (is_completed_or_idle or has_new_different_category or not current_cat):
+            # Citizen is starting a new or different complaint
+            detected_category = extracted_cat
+            text_category = extracted_cat
+            state.reset_after_registration()
+            state.lock_category(detected_category, source="text")
+        elif state.category_confirmed and state.confirmed_category:
             detected_category = state.confirmed_category
             text_category = state.confirmed_category
         elif state.category_locked and state.complaint_category:
             detected_category = state.complaint_category
             text_category = state.complaint_category
         else:
-            if text and detected_intent not in [INTENT_LOCATION_PROVIDED, INTENT_REGISTRATION_CONFIRMATION, INTENT_REGISTRATION_REJECTION, INTENT_ABUSIVE_MESSAGE, INTENT_GREETING, INTENT_UNRELATED]:
-                # Check informal normalizer first (fast Gen-Z and multilingual detection)
-                informal_res = nlp_agent.extract_intent_and_category(text)
-                if informal_res.get("category"):
-                    text_category = informal_res["category"]
-                    state.issue_type = informal_res.get("issue_type")
-                else:
-                    for cat_key in CATEGORY_DISPLAY_NAMES.keys():
-                        if cat_key in t_clean:
-                            text_category = cat_key
-                            break
-
-            detected_category = category or text_category or state.complaint_category
+            detected_category = category or extracted_cat or state.complaint_category
             if detected_category:
                 state.lock_category(detected_category, source="text")
                 if detected_category == "streetlight" and not state.visual_status:
@@ -1951,6 +2373,14 @@ class ConversationalService:
             with open(tmp_path, "wb") as f:
                 f.write(photo_bytes)
             saved_tmp_photo_path = str(tmp_path)
+
+            # Persist location if citizen provided location text alongside photo
+            if text and len(text.strip()) >= 3 and not nlp_agent.is_affirmative_yes(text) and not nlp_agent.is_negative_no(text):
+                cat_names = set(CATEGORY_DISPLAY_NAMES.keys()) | {"light", "pothole", "garbage", "drainage", "water", "कचरा", "खड्डा", "दिवा"}
+                if text.strip().lower() not in cat_names:
+                    state.location = text.strip()
+                    state.record_question_answered("location", text.strip())
+                    state.update_missing_fields()
 
             target_cat_for_eval = category or (text_category if text else None) or state.complaint_category
             if not target_cat_for_eval and "light" in t_clean:
@@ -2278,7 +2708,7 @@ class ConversationalService:
                         f"• **श्रेणी:** {cat_name_current}\n"
                         f"• **स्थिती:** {reg_result.get('status')}\n"
                         f"• **नागरिक पाठबळ (Upvotes):** {repeat_cnt} तक्रारी\n\n"
-                        f"महापालिकेचे पथक यावर कार्यरत आहे. जर आपले ठिकाण किंवा समस्या वेगळी असेल, तर **'नवीन तक्रार नोंदवा'** असे सांगा."
+                        f"महापालिकेचे पथक यावर कार्यरत आहे. जर आपले ठिकाण किंवा समस्या वेगळी असेल, तर **'नवीन तक्रार नोंदवा'** असे सांगा किंवा खालील बटण दाबा."
                     )
                 else:
                     reply = (
@@ -2287,10 +2717,15 @@ class ConversationalService:
                         f"• **Category:** {cat_name_current}\n"
                         f"• **Status:** {reg_result.get('status')}\n"
                         f"• **Citizen Reports (Upvotes):** {repeat_cnt}\n\n"
-                        f"Our municipal field staff is already assigned. If this is a different spot, reply with 'Register as new complaint'."
+                        f"Our municipal field staff is already assigned. If this is a different spot or issue, tap 'Register New Complaint'."
                     )
-                state.clear_pending_field()
-                state.complaint_status = "idle"
+                buttons = [
+                    {"text": "➕ नवीन तक्रार नोंदवा / New Complaint", "action": "start_new_complaint"},
+                    {"text": "🔍 स्थिती तपासा / Track Status", "action": f"track_{existing_tid}"}
+                ]
+                state.reset_after_registration()
+                state.last_duplicate_ticket = existing_tid
+                state.active_ticket_id = existing_tid
                 return {
                     "reply": reply,
                     "intent": "DUPLICATE_DETECTED",
@@ -2298,12 +2733,14 @@ class ConversationalService:
                     "category": reg_result.get("detected_category"),
                     "category_name": cat_name_current,
                     "ticket_data": reg_result,
+                    "buttons": buttons,
                     "action_prompt": "track_or_register_new"
                 }
 
             if reg_result.get("moderation_status") == "REJECTED" or reg_result.get("is_fraud"):
                 reason = reg_result.get("fraud_reason") or "Inappropriate content"
                 reply = f"🚫 आपली तक्रार नाकारली आहे: {reason}" if lang == "mr" else f"🚫 Complaint rejected: {reason}"
+                state.reset_after_registration()
                 return {
                     "reply": reply,
                     "intent": "MODERATION_REJECTED",
@@ -2403,17 +2840,23 @@ class ConversationalService:
             r'(?:जवळ|समोर|मागे|शेजारी)\s+[A-Za-z0-9\u0900-\u097F]{3,}',
             r'(?<!\bon\s)(?<!\bthe\s)[A-Za-z0-9\u0900-\u097F]{3,}\s+(?:road|street|मार्ग|रस्ता)\b'
         ]
-        detected_ward = geo_agent.detect_ward_from_text(text)
+        text_ward = geo_agent.detect_ward_from_text(text)
+        detected_ward = text_ward
         if not detected_ward and latitude and longitude and (latitude != 0.0 or longitude != 0.0):
             geo_map = geo_agent.map_coordinates_to_ward(latitude, longitude)
             if not geo_map.get("is_fallback"):
                 detected_ward = geo_map
 
-        has_specific_location = bool(detected_ward) or any(re.search(p, t_clean) for p in specific_location_patterns)
+        has_specific_location = bool(text_ward) or any(re.search(p, t_clean) for p in specific_location_patterns)
         has_substantive_desc = bool(has_specific_location and len(t_clean) > 20)
 
         ward_label = None
-        if detected_ward:
+        # Only announce the ward in greeting dialogue if the citizen explicitly mentioned a location in their text or confirmed it.
+        # Background device/browser GPS coordinates must NOT announce an unconfirmed default ward!
+        if text_ward:
+            z_str = f" ({text_ward['zone']})" if text_ward.get('zone') else ""
+            ward_label = f"प्रभाग {text_ward['ward_number']} - {text_ward['ward_name']}{z_str}"
+        elif getattr(state, "location", None) and any(re.search(p, (state.location or "").lower()) for p in specific_location_patterns) and detected_ward:
             z_str = f" ({detected_ward['zone']})" if detected_ward.get('zone') else ""
             ward_label = f"प्रभाग {detected_ward['ward_number']} - {detected_ward['ward_name']}{z_str}"
 

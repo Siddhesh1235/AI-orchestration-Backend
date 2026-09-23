@@ -83,6 +83,9 @@ class ConversationState(BaseModel):
     candidate_categories: List[str] = Field(default_factory=list)
     pending_clarification: Optional[Dict[str, Any]] = None
     pending_cancel_ticket: Optional[str] = None
+    last_duplicate_ticket: Optional[str] = None
+    active_ticket_id: Optional[str] = None
+    sub_category: Optional[str] = None
     last_updated: float = Field(default_factory=time.time)
 
     def reset(self):
@@ -427,6 +430,8 @@ class ConversationStateManager:
     def get_state(self, session_id: str) -> Optional[ConversationState]:
         """Gets existing state if any."""
         return self._states.get(session_id)
+
+    get = get_state
 
     def reset_state(self, session_id: str) -> ConversationState:
         """Resets the state for a new complaint after successful submission."""

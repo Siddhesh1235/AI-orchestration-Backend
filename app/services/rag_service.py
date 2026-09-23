@@ -10,7 +10,7 @@ import re
 import math
 import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Union
 from dataclasses import dataclass, field
 import numpy as np
 
@@ -31,7 +31,7 @@ class KnowledgeChunk:
 
 
 INQUIRY_INDICATORS = {
-    "कधी", "कुठे", "कोण", "काय", "कसा", "कशी", "किती", "वेळ", "वेळापत्रक",
+    "कधी", "कुठे", "कोण", "काय", "कसा", "कशी", "कसं", "कसे", "कस", "किती", "वेळ", "वेळापत्रक",
     "पत्ता", "कार्यालय", "नंबर", "संपर्क", "माहिती", "नियम", "दाखला", "सवलत",
     "रुग्णालय", "दवाखाना", "निरीक्षक", "अभियंता", "ऑफिस", "हॉस्पिटल",
     "what", "when", "where", "who", "which", "how", "timing", "schedule",
@@ -402,17 +402,80 @@ class WardRAGService:
             logger.warning(f"[RAG] LLM generation failed ({e}), falling back to direct context synthesis.")
 
         # Extractive fallback if LLM is unavailable
-        return self._format_extractive_fallback(best_chunk, lang, ward_num=active_ward)
+        is_multi_topic = any(conjn in query.lower() for conjn in ["आणि", "तसेच", "व", "and", "plus", "both"])
+        query_words = [w for w in re.findall(r'[\w\u0900-\u097F]+', query.lower()) if len(w) >= 3]
+        
+        # Check if best_chunk alone misses key query terms
+        best_content_lower = (best_chunk.title + " " + best_chunk.content).lower()
+        missing_terms = [w for w in query_words if w not in best_content_lower]
+        
+        chunks_to_synthesize = [best_chunk]
+        if (is_multi_topic or len(missing_terms) >= 2) and len(matches) > 1:
+            for next_chunk, next_score in matches[1:]:
+                next_content_lower = (next_chunk.title + " " + next_chunk.content).lower()
+                if any(w in next_content_lower for w in missing_terms):
+                    chunks_to_synthesize.append(next_chunk)
+                    break
+        
+        return self._format_extractive_fallback(chunks_to_synthesize, lang, ward_num=active_ward)
 
-    def _format_extractive_fallback(self, chunk: KnowledgeChunk, lang: str, ward_num: Optional[int] = None) -> str:
-        """Fallback formatter that extracts key info from chunk when LLM is offline."""
-        w_num = ward_num or chunk.ward_number or 15
-        lines = [line.strip() for line in chunk.content.split("\n") if line.strip()]
-        snippet = "\n".join(lines[:10])
+    def _format_extractive_fallback(self, chunk_or_chunks: Union[KnowledgeChunk, List[KnowledgeChunk]], lang: str, ward_num: Optional[int] = None) -> str:
+        """
+        Fallback formatter that synthesizes key info into a natural, warm, human-like response
+        without raw textbook headers (e.g. 'प्र. ४:') or robotic citations.
+        Supports single chunk or multi-chunk synthesis for composite inquiries.
+        """
+        chunks = chunk_or_chunks if isinstance(chunk_or_chunks, list) else [chunk_or_chunks]
+        if not chunks:
+            return ""
+
+        clean_answers = []
+        for chunk in chunks:
+            raw_text = chunk.content.strip()
+
+            # 1. Check if chunk is an FAQ pair (Extract only the answer body)
+            clean_answer = ""
+            m_ans = re.search(r'\*\*(?:उ|A|Ans|Answer)\s*:\s*\*\*\s*(.*)', raw_text, re.DOTALL | re.IGNORECASE)
+            if not m_ans:
+                m_ans = re.search(r'(?:^|\n)(?:उ|A|Ans|Answer)\s*:\s*(.*)', raw_text, re.DOTALL | re.IGNORECASE)
+            
+            if m_ans:
+                clean_answer = m_ans.group(1).strip()
+            else:
+                # Not a standard FAQ block: strip markdown headers and question labels
+                lines = [l.strip() for l in raw_text.split("\n") if l.strip()]
+                substantive_lines = []
+                for line in lines:
+                    if line.startswith("#") or re.match(r'^\*\*(?:प्र\.|Q\.|Question)', line, re.IGNORECASE):
+                        continue
+                    substantive_lines.append(line)
+                clean_answer = "\n".join(substantive_lines[:10]).strip()
+
+            # If answer starts with a greeting like 'नमस्कार!' remove duplicate greeting
+            clean_answer = re.sub(r'^(?:नमस्कार!|नमस्कार\s*!|Hello!|Hello\s*!)\s*', '', clean_answer).strip()
+            if clean_answer and clean_answer not in clean_answers:
+                clean_answers.append(clean_answer)
+
+        combined_answer = "\n\n".join(clean_answers)
+
         if lang == "mr":
-            return f"🙏 **वॉर्डमित्र (WardMitra) — प्रभाग क्र. {w_num} माहिती ({chunk.title}):**\n\n{snippet}\n\n👉 *अधिक माहितीसाठी प्रभाग {w_num} कार्यालय किंवा वॉर्डमित्र (WardMitra) शी संपर्क साधा.*"
+            return (
+                f"नमस्कार! 🙏\n\n"
+                f"{combined_answer}\n\n"
+                f"👉 *आपणास या समस्येबाबत अधिकृत तक्रार नोंदवायची असल्यास कृपया सांगा किंवा ठिकाण पाठवा, मी लगेच नोंदवून घेईन.*"
+            )
+        elif lang == "hi":
+            return (
+                f"नमस्ते! 🙏\n\n"
+                f"{combined_answer}\n\n"
+                f"👉 *यदि आप इस समस्या के लिए आधिकारिक शिकायत दर्ज करना चाहते हैं, तो कृपया बताएं या स्थान साझा करें।* "
+            )
         else:
-            return f"🙏 **WardMitra — Ward {w_num} Information ({chunk.title}):**\n\n{snippet}\n\n👉 *For further help, visit the Ward {w_num} Office or reach out to WardMitra support.*"
+            return (
+                f"Hello! 🙏\n\n"
+                f"{combined_answer}\n\n"
+                f"👉 *If you would like to register an official civic complaint for this, please let me know or share the location.*"
+            )
 
 
 # Global singleton instance

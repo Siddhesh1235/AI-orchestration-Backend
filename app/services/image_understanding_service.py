@@ -722,7 +722,7 @@ class ImageUnderstandingService:
             "रस्ता", "चौक", "नगर", "कॉलनी", "सेक्टर", "गल्ली", "परिसर", "प्रभाग", "गाव"
         ])
         has_coords = bool(ctx.get("ward_number") or (ctx.get("latitude") and ctx.get("longitude")))
-        has_location = bool(has_coords or has_explicit_landmark)
+        has_location = bool(ctx.get("location") or has_coords or has_explicit_landmark)
 
         # 3. Check if citizen provided complete complaint details prior to photo
         is_complete = bool(
@@ -747,14 +747,18 @@ class ImageUnderstandingService:
                 if not has_location:
                     msg_en = "I can see the streetlight in the photo. Since you mentioned it is OFF, what is the exact pole number or landmark location?"
                     msg_mr = "मला फोटोमध्ये पथदिवा दिसत आहे. आपण सांगितल्याप्रमाणे तो बंद आहे; कृपया या पथदिव्याचा पोल नंबर किंवा जवळची खूण (लँडमार्क) सांगा."
+                    msg_hi = "फोटो में स्ट्रीट लाइट दिखाई दे रही है। आपने बताया कि यह बंद है; कृपया इसका पोल नंबर या नजदीकी लैंडमार्क बताएं।"
                 else:
                     msg_en = "I have noted the streetlight is OFF at this location. Is there any visible damage to the pole or exposed wiring?"
                     msg_mr = "या परिसरातील पथदिवा बंद असल्याचे नोंदवले आहे. पोलचे काही नुकसान झाले आहे का किंवा उघड्या तारा दिसत आहेत का?"
+                    msg_hi = "इस स्थान पर स्ट्रीट लाइट बंद दर्ज की गई है। क्या खंभे को कोई नुकसान हुआ है या खुली तारें दिखाई दे रही हैं?"
+                q_text = msg_mr if lang == "mr" else (msg_hi if lang == "hi" else msg_en)
                 return {
                     "all_info_known": False,
-                    "followup_question": msg_mr if lang == "mr" else msg_en,
+                    "followup_question": q_text,
                     "reply_en": msg_en,
                     "reply_mr": msg_mr,
+                    "reply_hi": msg_hi,
                     "next_action": "provide_location" if not has_location else "confirm_register"
                 }
 
@@ -763,14 +767,18 @@ class ImageUnderstandingService:
                 if not has_location:
                     msg_en = "This appears to be a streetlight that is switched off. What is the approximate location, street name, or nearest landmark?"
                     msg_mr = "हा पथदिवा बंद असल्याचे स्पष्ट दिसत आहे. या ठिकाणचा रस्ता, प्रभाग किंवा जवळची खूण काय आहे?"
+                    msg_hi = "यह स्ट्रीट लाइट बंद दिखाई दे रही है। इस स्थान की सड़क, प्रभाग या नजदीकी लैंडमार्क क्या है?"
                 else:
                     msg_en = "This appears to be a streetlight that is switched off at your location. Would you like me to register this complaint now?"
                     msg_mr = "हा पथदिवा बंद असल्याचे स्पष्ट दिसत आहे. मी ही तक्रार आता नोंदवू का?"
+                    msg_hi = "यह स्ट्रीट लाइट बंद दिखाई दे रही है। क्या मैं यह शिकायत अभी दर्ज करूँ?"
+                q_text = msg_mr if lang == "mr" else (msg_hi if lang == "hi" else msg_en)
                 return {
                     "all_info_known": False,
-                    "followup_question": msg_mr if lang == "mr" else msg_en,
+                    "followup_question": q_text,
                     "reply_en": msg_en,
                     "reply_mr": msg_mr,
+                    "reply_hi": msg_hi,
                     "next_action": "provide_location" if not has_location else "confirm_register"
                 }
 
@@ -778,11 +786,14 @@ class ImageUnderstandingService:
             if analysis.visual_status == "unclear" and not user_stated_status:
                 msg_en = "I can identify the streetlight, but I can't clearly determine whether it is ON or OFF. Is the streetlight currently ON or OFF?"
                 msg_mr = "मी पथदिवा ओळखू शकलो आहे, पण तो चालू आहे की बंद हे स्पष्ट दिसत नाही. पथदिवा सध्या चालू आहे की बंद?"
+                msg_hi = "स्ट्रीट लाइट पहचानी गई है, लेकिन यह चालू है या बंद स्पष्ट नहीं दिख रहा। क्या लाइट अभी चालू है या बंद?"
+                q_text = msg_mr if lang == "mr" else (msg_hi if lang == "hi" else msg_en)
                 return {
                     "all_info_known": False,
-                    "followup_question": msg_mr if lang == "mr" else msg_en,
+                    "followup_question": q_text,
                     "reply_en": msg_en,
                     "reply_mr": msg_mr,
+                    "reply_hi": msg_hi,
                     "next_action": "clarify_status"
                 }
 
@@ -791,16 +802,20 @@ class ImageUnderstandingService:
             if not has_location:
                 msg_en = "I can see a pothole on the road. What is the approximate location or road/street name for this pothole?"
                 msg_mr = "मला रस्त्यावर खड्डा दिसत आहे. या खड्ड्याचे अंदाजे ठिकाण किंवा रस्त्याचे नाव काय आहे?"
+                msg_hi = "सड़क पर गड्ढा दिखाई दे रहा है। इस गड्ढे का अनुमानित स्थान या सड़क का नाम क्या है?"
                 next_act = "provide_location"
             else:
                 msg_en = "I can see the pothole in the photo. Is it causing severe difficulty or traffic risk for vehicles?"
                 msg_mr = "मला फोटोमध्ये खड्डा दिसत आहे. यामुळे वाहनांना किंवा वाहतुकीला मोठा अडथळा निर्माण होत आहे का?"
+                msg_hi = "फोटो में गड्ढा दिख रहा है। क्या इससे वाहनों या यातायात को बड़ा खतरा हो रहा है?"
                 next_act = "confirm_register"
+            q_text = msg_mr if lang == "mr" else (msg_hi if lang == "hi" else msg_en)
             return {
                 "all_info_known": False,
-                "followup_question": msg_mr if lang == "mr" else msg_en,
+                "followup_question": q_text,
                 "reply_en": msg_en,
                 "reply_mr": msg_mr,
+                "reply_hi": msg_hi,
                 "next_action": next_act
             }
 
@@ -809,16 +824,20 @@ class ImageUnderstandingService:
             if not has_location:
                 msg_en = "I have identified garbage accumulation in this image. Where exactly is this waste located, and approximately how long has it been there?"
                 msg_mr = "या फोटोमध्ये कचरा साचल्याचे दिसत आहे. हा कचरा नक्की कोठे साचला आहे आणि अंदाजे किती दिवसांपासून आहे?"
+                msg_hi = "इस फोटो में कचरा जमा हुआ दिखाई दे रहा है। यह कचरा किस स्थान पर है और लगभग कितने दिनों से है?"
                 next_act = "provide_location"
             else:
                 msg_en = "I have identified the garbage accumulation at your location. Is it household waste, commercial waste, or construction debris?"
                 msg_mr = "कचरा साचल्याचे दिसत आहे. हा घरगुती कचरा आहे, व्यावसायिक कचरा आहे की बांधकामाचा मलबा (debris) आहे?"
+                msg_hi = "कचरा जमा होने की पहचान हुई है। क्या यह घरेलू कचरा (household waste) है, व्यावसायिक कचरा है या निर्माण मलबा (debris) है?"
                 next_act = "confirm_register"
+            q_text = msg_mr if lang == "mr" else (msg_hi if lang == "hi" else msg_en)
             return {
                 "all_info_known": False,
-                "followup_question": msg_mr if lang == "mr" else msg_en,
+                "followup_question": q_text,
                 "reply_en": msg_en,
                 "reply_mr": msg_mr,
+                "reply_hi": msg_hi,
                 "next_action": next_act
             }
 
@@ -827,16 +846,20 @@ class ImageUnderstandingService:
             if not has_location:
                 msg_en = "I can see a drainage issue in the image. Where exactly is this drain located, and is sewage water overflowing?"
                 msg_mr = "मला ड्रेनेजची समस्या दिसत आहे. हे गटर नक्की कोठे आहे आणि सांडपाणी रस्त्यावर वाहत आहे का?"
+                msg_hi = "ड्रेनेज की समस्या दिखाई दे रही है। यह नाली कहाँ स्थित है और क्या गंदा पानी सड़क पर बह रहा है?"
                 next_act = "provide_location"
             else:
                 msg_en = "I can see the drainage issue. Is the drain completely blocked or is waterlogging occurring in the area?"
                 msg_mr = "मला ड्रेनेजची समस्या दिसत आहे. गटर पूर्ण तुंबले आहे की परिसरात पाणी साचले आहे?"
+                msg_hi = "ड्रेनेज की समस्या दिख रही है। क्या नाली पूरी तरह बंद है या क्षेत्र में जलभराव हो रहा है?"
                 next_act = "confirm_register"
+            q_text = msg_mr if lang == "mr" else (msg_hi if lang == "hi" else msg_en)
             return {
                 "all_info_known": False,
-                "followup_question": msg_mr if lang == "mr" else msg_en,
+                "followup_question": q_text,
                 "reply_en": msg_en,
                 "reply_mr": msg_mr,
+                "reply_hi": msg_hi,
                 "next_action": next_act
             }
 
@@ -845,27 +868,34 @@ class ImageUnderstandingService:
             if not has_location:
                 msg_en = "I can identify water leakage in this image. What is the exact spot or landmark where this water pipe is leaking?"
                 msg_mr = "मला या फोटोमध्ये पाण्याची गळती दिसत आहे. ही पाईपलाईन नक्की कोणत्या ठिकाणी किंवा खुणेजवळ गळत आहे?"
+                msg_hi = "पानी के रिसाव (water leakage) की पहचान हुई है। यह पाइपलाइन किस स्थान या लैंडमार्क के पास लीक हो रही है?"
                 next_act = "provide_location"
             else:
                 msg_en = "I have detected the water leakage. Is the drinking water supply pipeline leaking continuously or under high pressure?"
                 msg_mr = "मला पाण्याची गळती दिसत आहे. ही पिण्याच्या पाण्याची पाईपलाईन सतत वाहत आहे का?"
+                msg_hi = "पानी का रिसाव दर्ज किया गया है। क्या पीने के पानी की पाइपलाइन लगातार बह रही है?"
                 next_act = "confirm_register"
+            q_text = msg_mr if lang == "mr" else (msg_hi if lang == "hi" else msg_en)
             return {
                 "all_info_known": False,
-                "followup_question": msg_mr if lang == "mr" else msg_en,
+                "followup_question": q_text,
                 "reply_en": msg_en,
                 "reply_mr": msg_mr,
+                "reply_hi": msg_hi,
                 "next_action": next_act
             }
 
         # Default fallback
         rec_en = analysis.recommended_followup or "Could you please specify the exact location for this issue?"
         rec_mr = analysis.recommended_followup_mr or "कृपया या समस्येचे नेमके ठिकाण सांगा."
+        rec_hi = "कृपया इस समस्या का सटीक स्थान बताएं।"
+        q_text = rec_mr if lang == "mr" else (rec_hi if lang == "hi" else rec_en)
         return {
             "all_info_known": False,
-            "followup_question": rec_mr if lang == "mr" else rec_en,
+            "followup_question": q_text,
             "reply_en": rec_en,
             "reply_mr": rec_mr,
+            "reply_hi": rec_hi,
             "next_action": "provide_location"
         }
 

@@ -53,7 +53,7 @@ CIVIC_12_CATEGORIES: List[Dict[str, Any]] = [
         "clarification_prompt_hi": "कृपया सड़क के गड्ढे का सटीक स्थान बताएं और सड़क की तस्वीर साझा करें।",
         "keywords": [
             "pothole", "potholes", "road damage", "crater", "tarmac", "asphalt", "broken road",
-            "खड्डा", "खड्डे", "रस्ता", "खड्डेमय", "डामर", "गड्ढा", "गड्ढे", "सड़क"
+            "खड्डा", "खड्डे", "खराब रस्ता", "खड्डेमय", "डामर", "गड्ढा", "गड्ढे", "सड़क खराब"
         ]
     },
     {
@@ -75,7 +75,8 @@ CIVIC_12_CATEGORIES: List[Dict[str, Any]] = [
         "clarification_prompt_hi": "क्या कचरा पेटी भर गई है या खुले में कचरे का ढेर लगा है?",
         "keywords": [
             "garbage", "trash", "waste", "dumping", "dustbin", "litter", "debris",
-            "कचरा", "घाण", "कचराकुंडी", "उकिरडा", "स्वच्छता", "कूड़ा", "कचरे का ढेर"
+            "कचरा", "घाण", "कचराकुंडी", "उकिरडा", "कूड़ा", "कचरे का ढेर",
+            "कचरा साचला", "साचला", "कचऱ्याचा ढीग", "दुर्गंधी", "घाण वास", "बदबू"
         ]
     },
     {
@@ -105,9 +106,9 @@ CIVIC_12_CATEGORIES: List[Dict[str, Any]] = [
         "key": "pipeline_water_leakage",
         "model_class": "PipelineDefects",
         "aliases": ["water_leakage", "water_pipeline_leakages", "water_supply", "pipe_burst", "पाणी गळती"],
-        "name_en": "Water Pipeline Leakage",
-        "name_mr": "पाण्याची पाईपलाईन गळती",
-        "name_hi": "पानी की पाइपलाइन लीकेज",
+        "name_en": "Water Supply & Pipeline Leakage",
+        "name_mr": "पाणीपुरवठा व पाईपलाईन गळती",
+        "name_hi": "जलापूर्ति और पाइपलाइन लीकेज",
         "department_code": "WATER_SUPPLY",
         "department_name": "Water Supply Department",
         "department_name_mr": "पाणीपुरवठा विभाग",

@@ -32,6 +32,8 @@ INTENT_ABUSIVE_MESSAGE = "ABUSIVE_MESSAGE"
 INTENT_GREETING = "GREETING"
 INTENT_UNRELATED = "UNRELATED"
 INTENT_CANCEL_COMPLAINT = "CANCEL_COMPLAINT"
+INTENT_START_NEW_COMPLAINT = "START_NEW_COMPLAINT"
+INTENT_CIVIC_KNOWLEDGE_INQUIRY = "CIVIC_KNOWLEDGE_INQUIRY"
 
 YES_CONFIRMATION_WORDS = {
     "yes", "yeah", "y", "sure", "okay", "ok", "correct", "yes correct",
@@ -49,11 +51,12 @@ NO_CONFIRMATION_WORDS = {
 }
 
 CORRECTION_CATEGORY_KEYWORDS = {
-    "pothole": ["pothole", "potholes", "khadda", "khadde", "खड्डा", "खड्डे", "road damage", "road", "रस्ता"],
+    "pothole": ["pothole", "potholes", "khadda", "khadde", "खड्डा", "खड्डे", "road damage", "broken road", "खराब रस्ता"],
     "streetlight": ["streetlight", "street light", "streetlights", "light", "diva", "पथदिवा", "दिवा", "लाईट", "लाईट्स"],
     "garbage": ["garbage", "waste", "kachra", "कचरा", "कचराकुंडी", "dustbin", "kooda", "कूड़ा"],
     "drainage": ["drainage", "gutter", "gatar", "गटार", "ड्रेनेज", "sewer", "naali", "नाली"],
-    "pipeline_water_leakage": ["pipeline", "water leak", "water", "leak", "leakage", "pani", "पाणी", "गळती", "पाईप"],
+    "water_supply": ["water supply", "drinking water", "low pressure", "no water", "irregular water", "पाणीपुरवठा", "पिण्याचे पाणी", "कमी दाब", "पाणी नाही", "अनियमित पाणी", "नळाला पाणी", "पाणी येत नाही"],
+    "pipeline_water_leakage": ["pipeline", "water leak", "leak", "leakage", "pipe burst", "pipe", "गळती", "पाईप फुटली", "पाईपलाईन गळती", "पाईप"],
     "trees": ["tree", "trees", "ped", "पेड़", "झाड", "झाडे", "फांदी", "branch"],
     "traffic_jams": ["traffic", "jam", "वाहतूक", "ट्रॅफिक", "कोंडी", "signal"],
     "noise_pollution": ["noise", "loudspeaker", "speaker", "ध्वनी", "आवाज", "डीजे", "dj"],
@@ -155,8 +158,7 @@ INFORMAL_CIVIC_PATTERNS = [
         "patterns": [
             r"\bgarbage\s+pada\s+hai\b",
             r"\bkachra\s+pada\s+hai\b",
-            r"\bkachra\s+jamla\s+aa?he\b",
-            r"\bkachryacha\s+dhig\s+aa?he\b",
+            r"(?:kachra.*?jamla|kachra.*?pada|kachryacha.*?dhig)",
             r"\bkachre\s+ka\s+dher\s+hai\b",
             r"\bkooda\s+pada\s+hai\b",
             r"\bkachra\s+na?hi\s+uthaya\b",
@@ -164,7 +166,7 @@ INFORMAL_CIVIC_PATTERNS = [
             r"\boverflowing\s+dustbin\b",
             r"\bgarbage\s+dump\b",
             r"\bकूड़ा\s+पड़ा\s+है\b",
-            r"\bकचरा\s+साचला\s+आहे\b",
+            r"(?:कचरा.*?साचला|साचलेला\s+कचरा|कचऱ्याचा\s+ढीग)",
             r"\bकचरा\s+उचलला\s+नाही\b"
         ],
         "category": "garbage",
@@ -371,7 +373,7 @@ class NLPAgent:
 
         if devanagari_count > 0:
             # Check Hindi specific Devanagari words
-            if any(w in cleaned for w in ["है", "नहीं", "सड़क", "गड्ढा", "बिजली", "पेड़", "रहा", "रही", "गया", "गई", "बत्ती"]):
+            if any(w in cleaned for w in ["है", "नहीं", "सड़क", "गड्ढा", "बिजली", "पेड़", "रहा", "रही", "गया", "गई", "बत्ती", "क्या", "मेरा", "मेरी", "मेरे", "दूसरों", "दिखेगा", "होगा", "होगी", "सकता", "सकती", "करना", "करूं", "चाहिए", "मुझे", "किसको"]):
                 return "hi"
             return "mr"
 
@@ -567,11 +569,20 @@ class NLPAgent:
         return any(re.search(p, clean) for p in patterns)
 
     def _keyword_match(self, text: str) -> Optional[str]:
+        if not text:
+            return None
+        text_lower = text.lower()
+        scores: Dict[str, int] = {}
         for cat_name, cat_info in self.categories_config.items():
             keywords = cat_info.get("keywords", [])
             for kw in keywords:
-                if kw.lower() in text:
-                    return cat_name
+                kw_l = kw.lower()
+                if kw_l and kw_l in text_lower:
+                    # Longer and more specific keywords score higher
+                    score = len(kw_l) if len(kw_l) > 3 else 3
+                    scores[cat_name] = scores.get(cat_name, 0) + score
+        if scores:
+            return max(scores.items(), key=lambda x: x[1])[0]
         return None
 
     def _llm_classify(self, text: str) -> Optional[str]:
@@ -678,16 +689,24 @@ class NLPAgent:
         """
         Extracts corrected category when user says:
         'no, my complaint is about potholes', 'actually about streetlights', 'नाही, खड्डा आहे', etc. (BUG 5)
+        Guarded against informational questions and normal Marathi auxiliary verbs ('आली नाही', 'पाणी नाही').
         """
         if not text:
             return None
         clean = text.strip().lower()
         
+        # Guard: Inquiries/questions should never be treated as category corrections
+        from app.services.rag_service import is_knowledge_inquiry
+        if is_knowledge_inquiry(clean):
+            return None
+
         correction_patterns = [
-            r"\b(?:no|nope|not\s+this|actually|instead|rather|wrong)\b",
-            r"(?:नाही|नको|चुकीचे|दुसरी|वेगळी)",
+            r"\b(?:no|nope|not\s+this|actually|instead|rather|wrong|wrong\s+category)\b",
+            r"^(?:नाही|नको|nahi|nako|no)\b",
+            r"(?:^|[,\.\?!])\s*(?:नाही|नको|nahi|nako|no)\b",
+            r"(?:चुकीचे\s+आहे|हे\s+नाही|दुसरी\s+तक्रार|वेगळी\s+तक्रार|तक्रार\s+बदला)",
             r"\b(?:complaint\s+is\s+(?:about|actually)|actually\s+about|issue\s+is\s+about)\b",
-            r"(?:तक्रार\s+ही|तक्रार\s+.*?(?:बद्दल|आहे))"
+            r"(?:तक्रार\s+ही|माझी\s+तक्रार|तक्रार\s+.*?(?:बद्दल|आहे))"
         ]
         has_correction_intent = any(re.search(pat, clean, re.IGNORECASE) for pat in correction_patterns)
         if not has_correction_intent:
@@ -732,7 +751,7 @@ class NLPAgent:
             }
 
         # 2.5 Tracking / Status Query
-        if action == "track" or (clean and any(w in clean for w in ["track", "status", "तपासा", "स्थिती", "ticket", "तिकीट"])) or re.search(r'\bWM-\d{8}-\d{4}\b', clean.upper()):
+        if (action and (action == "track" or action.startswith("track_"))) or (clean and any(w in clean for w in ["track", "status", "तपासा", "स्थिती", "ticket", "तिकीट"])) or re.search(r'\bWM-\d{8}-\d{4}\b', clean.upper()):
             return {
                 "intent": INTENT_STATUS_QUERY,
                 "category": None,
@@ -787,6 +806,23 @@ class NLPAgent:
                 "confidence": 0.95
             }
 
+        # Check for Explicit Start New Complaint Request (e.g. "नवीन तक्रार नोंदवा", "दुसरी तक्रार", "new complaint")
+        new_complaint_patterns = [
+            r"\b(?:start|register|file|lodge|create)\s+(?:a\s+)?(?:new|another|different)\s+(?:complaint|ticket|issue|grievance)\b",
+            r"\b(?:new|another|different)\s+(?:complaint|ticket|issue|grievance)\b",
+            r"(?:नवीन|दुसरी|वेगळी)\s*(?:तक्रार|समस्या)",
+            r"(?:नवीन\s*तक्रार\s*नोंदवा|दुसरी\s*तक्रार\s*नोंदवा|नवीन\s*तक्रार\s*करायची|नवीन\s*समस्या\s*आहे)",
+            r"(?:दुसरी\s*तक्रार|नवीन\s*तक्रार|दुसरी\s*समस्या)",
+            r"(?:नई|दूसरी|अलग)\s*(?:शिकायत|समस्या)",
+            r"(?:नई\s*शिकायत\s*दर्ज\s*करें|दूसरी\s*शिकायत\s*दर्ज\s*करें)"
+        ]
+        if action in ["start_new_complaint", "new_complaint"] or (clean and any(re.search(p, clean, re.IGNORECASE) for p in new_complaint_patterns)):
+            return {
+                "intent": INTENT_START_NEW_COMPLAINT,
+                "category": None,
+                "confidence": 0.98
+            }
+
         # Check for Step-by-Step Complaint Process Guidance Inquiry (BUG 4)
         process_inquiry_patterns = [
             r'\bhow\s+(?:to|can\s+i|do\s+i|should\s+i)\s+(?:register|file|lodge|raise|submit|make|put|report|complain)',
@@ -795,7 +831,7 @@ class NLPAgent:
             r'\b(?:procedure|steps|guide|help)\s+.*?\b(?:register|file|complaint|grievance)\b',
             r'\b(?:guide\s+me|teach\s+me|show\s+me\s+how|walk\s+me\s+through|onboard\s+me)\b',
             r'(?:तक्रार\s+कशी|कशी\s+तक्रार|कशी\s+नोंदवा|कशी\s+करायची|कशी\s+करावी|नोंदवण्याची\s+पद्धत|नोंदणी\s+कशी|प्रक्रिया|पायऱ्या|माहिती\s+द्या|कशी\s+नोंदवू)',
-            r'(?:मला\s+(?:एक\s+)?(?:तक्रार|कम्प्लेंट)|तक्रार\s+(?:नोंदवायची|करायची|द्यायची|दाखल\s+करायची)|कम्प्लेंट\s+(?:कशी|करायची|नोंदवायची)|नवीन\s+तक्रार\s+करायची)',
+            r'(?:मला\s+(?:एक\s+)?(?:तक्रार|कम्प्लेंट)|तक्रार\s+(?:नोंदवायची|करायची|द्यायची|दाखल\s+करायची)|कम्प्लेंट\s+(?:कशी|करायची|नोंदवायची))',
             r'(?:मला\s*शिकवा|मला\s*मार्गदर्शन\s*करा|मार्गदर्शन\s*करा|समजावून\s*सांगा|शिकवा\s*मला)',
             r'\bi\s+(?:want|need|wish)\s+to\s+(?:register|file|lodge|raise|submit|make)\s+(?:a\s+)?(?:complaint|grievance|ticket)\b',
             r'\b(?:takrar\s+kashi|kashi\s+takrar|process\s+sanga|step\s*by\s*step|kashi\s+karaychi)\b'
@@ -815,6 +851,18 @@ class NLPAgent:
         if any(re.search(p, clean) for p in smalltalk_patterns):
             return {
                 "intent": "SMALLTALK",
+                "category": None,
+                "confidence": 0.95
+            }
+
+        # Check for Bot Identity / Service Inquiry
+        bot_inquiry_patterns = [
+            r"\b(?:who\s+are\s+you|what\s+can\s+you\s+do|what\s+is\s+your\s+name|who\s+made\s+you|what\s+do\s+you\s+do)\b",
+            r"(?:तुम्ही\s*कोण\s*आहात|तुम्ही\s*कोण|नाव\s*काय|काय\s*करू\s*शकता|आप\s*कौन\s*हैं|तुम\s*कौन\s*हो)"
+        ]
+        if any(re.search(p, clean) for p in bot_inquiry_patterns):
+            return {
+                "intent": "SERVICE_INQUIRY",
                 "category": None,
                 "confidence": 0.95
             }
@@ -840,7 +888,7 @@ class NLPAgent:
                     "category": getattr(state, "complaint_category", None),
                     "confidence": 0.98
                 }
-            elif action in ["confirm_register_no", "cancel_register"] or (clean and self.is_negative_no(clean)):
+            elif action in ["confirm_register_no", "cancel_register", "cancel", "no"] or (clean and self.is_negative_no(clean)):
                 return {
                     "intent": INTENT_REGISTRATION_REJECTION,
                     "category": None,
@@ -894,6 +942,31 @@ class NLPAgent:
                     "confidence": 0.98
                 }
                 
+        # Check if citizen is asking a civic knowledge inquiry / informational question
+        from app.services.rag_service import is_knowledge_inquiry
+        if clean and not has_photo and not has_video and is_knowledge_inquiry(clean):
+            kw_cat_inq = self._keyword_match(clean)
+            return {
+                "intent": INTENT_CIVIC_KNOWLEDGE_INQUIRY,
+                "category": kw_cat_inq,
+                "confidence": 0.95
+            }
+
+        # Check if citizen is introducing a new or different complaint category even if location/description was pending
+        kw_cat = self._keyword_match(clean)
+        informal_match = normalize_informal_civic_text(clean)
+        matched_new_cat = informal_match["category"] if informal_match else kw_cat
+        locked_cat = getattr(state, "complaint_category", None) if state else None
+        is_completed_or_idle = getattr(state, "complaint_status", "") in ["completed", "idle"]
+
+        if matched_new_cat and (not locked_cat or is_completed_or_idle or matched_new_cat != locked_cat):
+            return {
+                "intent": INTENT_NEW_COMPLAINT,
+                "category": matched_new_cat,
+                "issue_type": informal_match.get("issue_type") if informal_match else None,
+                "confidence": 0.95
+            }
+
         # Location provided step (BUG 3)
         if pending_field == "location" and clean:
             return {
@@ -963,12 +1036,18 @@ class NLPAgent:
             }
             
         kw_cat = self._keyword_match(clean)
-        if kw_cat and (not state or not getattr(state, "category_locked", False)):
-            return {
-                "intent": INTENT_NEW_COMPLAINT,
-                "category": kw_cat,
-                "confidence": 0.88
-            }
+        locked_cat = getattr(state, "complaint_category", None) if state else None
+        is_locked = getattr(state, "category_locked", False) if state else False
+        complaint_status = getattr(state, "complaint_status", "") if state else ""
+
+        if kw_cat:
+            # If not locked, or previous complaint was finished/idle, or user explicitly mentions a DIFFERENT category
+            if not is_locked or complaint_status in ["completed", "idle"] or kw_cat != locked_cat:
+                return {
+                    "intent": INTENT_NEW_COMPLAINT,
+                    "category": kw_cat,
+                    "confidence": 0.88
+                }
             
         # If user message is smalltalk/gratitude
         if clean and any(w in clean for w in ["thank", "thanks", "dhanyavad", "धन्यवाद", "आभार", "bye", "goodbye"]):
